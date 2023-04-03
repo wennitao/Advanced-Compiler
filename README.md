@@ -335,7 +335,7 @@ if (N >= 0) {
 
 ## Code Example
 
-See `poc.c`. 
+See `example/poc.c`. 
 
 It is an example of a source (to polyhedra) to source compiler. 
 
