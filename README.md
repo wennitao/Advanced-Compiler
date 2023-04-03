@@ -1,6 +1,8 @@
 # Advanced Compiler
 Advanced Compiler Assignment of ACM Class
 
+[TOC]
+
 ## Loop Transformation on Polyhedral 
 
 Idea from "A Practical Automatic Polyhedral Parallelizer and Locality Optimizer".
