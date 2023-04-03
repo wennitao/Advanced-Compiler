@@ -1,8 +1,6 @@
 # Advanced Compiler
 Advanced Compiler Assignment of ACM Class
 
-[TOC]
-
 ## Loop Transformation on Polyhedral 
 
 Idea from "A Practical Automatic Polyhedral Parallelizer and Locality Optimizer".
@@ -335,6 +333,17 @@ if (N >= 0) {
 #pragma endscop
 ```
 
+## Code Example
+
+See `poc.c`. 
+
+It is an example of a source (to polyhedra) to source compiler. 
+
+```bash
+gcc -DCLOOG_INT_GMP poc.c -lcloog-isl -lclan -losl -o poc
+./poc scop.c
+```
+
 ## Environment 
 
 **Requirements**: `autoconf`, `automake`, `libtool`, `GMP`, `bison >= 2.4`
@@ -346,6 +355,8 @@ Chunky Loop Analyzer: A Polyhedral Representation Extraction Tool for High Level
 https://github.com/periscop/clan
 
 ```bash
+git clone https://github.com/periscop/clan.git
+cd clan
 ./autogen.sh
 ./configure
 make
@@ -359,6 +370,8 @@ Data Dependence Analyzer in the Polyhedral Model
 https://github.com/periscop/candl
 
 ```bash
+git clone https://github.com/periscop/candl.git
+cd candl
 ./get_submodules.sh
 ./autogen.sh
 ./configure --with-piplib=bundled --with-scoplib=bundled
@@ -373,6 +386,8 @@ The CLooG Code Generator in the Polytope Model
 https://github.com/bondhugula/cloog
 
 ```bash
+git clone https://github.com/bondhugula/cloog.git
+cd cloog
 ./get_submodules.sh
 ./autogen.sh
 ./configure
