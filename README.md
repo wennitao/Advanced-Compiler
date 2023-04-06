@@ -348,8 +348,6 @@ gcc -DCLOOG_INT_GMP poc.c -lcloog-isl -lclan -losl -o poc
 
 **Requirements**: `autoconf`, `automake`, `libtool`, `GMP`, `bison >= 2.4`
 
-**If you are a Mac user, please use clang++ instead of clang to compile poc.c**
-
 ### Clan 
 
 Chunky Loop Analyzer: A Polyhedral Representation Extraction Tool for High Level Programs
@@ -392,7 +390,7 @@ git clone https://github.com/bondhugula/cloog.git
 cd cloog
 ./get_submodules.sh
 ./autogen.sh
-./configure
+./configure --with-osl=system
 make
 make install
 ```
