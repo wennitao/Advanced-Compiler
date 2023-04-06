@@ -348,7 +348,7 @@ gcc -DCLOOG_INT_GMP poc.c -lcloog-isl -lclan -losl -o poc
 
 **Requirements**: `autoconf`, `automake`, `libtool`, `GMP`, `bison >= 2.4`
 
-**If you are a Mac user, please use clang++ instead of clang.**
+**If you are a Mac user, please use clang++ instead of clang to compile poc.c**
 
 ### Clan 
 
