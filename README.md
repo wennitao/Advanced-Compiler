@@ -348,7 +348,13 @@ gcc -DCLOOG_INT_GMP poc.c -lcloog-isl -lclan -losl -o poc
 
 **Requirements**: `autoconf`, `automake`, `libtool`, `GMP`, `bison >= 2.4`
 
-**If you are a Mac user, please use clang++ instead of clang to compile poc.c**
+If you are a Mac user, you may need to run to set default library and include path.
+```bash
+/bin/launchctl setenv LIBRARY_PATH /usr/local/lib
+/bin/launchctl setenv CPATH /usr/local/include
+```
+
+(I don't know what makes me to successfully compile it on my Mac.)
 
 ### Clan 
 
@@ -362,14 +368,23 @@ cd clan
 ./autogen.sh
 ./configure
 make
+make check
 make install
 ```
+
+If your make does not make doc, you can install texinfo by 
+`sudo apt install texinfo` and go to `doc` subfolder and `makeinfo --html --no-split -o clan.html clan.texi`.
+
+Try to compile `example/clan.c` by `gcc clan.c -losl -lclan -o clan` to test you have installed clan successfully.
+Then `more fuse.c | ./clan` to see the corresponding SCoP of `fuse.c`.
 
 ### Candl
 
 Data Dependence Analyzer in the Polyhedral Model
 
 https://github.com/periscop/candl
+
+(Probably you don't need this.)
 
 ```bash
 git clone https://github.com/periscop/candl.git
@@ -385,14 +400,18 @@ make install
 
 The CLooG Code Generator in the Polytope Model
 
-https://github.com/bondhugula/cloog
+https://github.com/periscop/cloog
 
 ```bash
-git clone https://github.com/bondhugula/cloog.git
+git clone https://github.com/periscop/cloog.git
 cd cloog
 ./get_submodules.sh
 ./autogen.sh
 ./configure
 make
+make check
 make install
 ```
+
+Try to compile `example/poc.c` by `gcc -DCLOOG_INT_GMP poc.c -lcloog-isl -lclan -losl -o poc` to test you have installed cloog successfully.
+Then `./poc fuse.c`, you will see SCoP and the generated C code of `fuse.c`.
