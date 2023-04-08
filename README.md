@@ -407,7 +407,7 @@ git clone https://github.com/periscop/cloog.git
 cd cloog
 ./get_submodules.sh
 ./autogen.sh
-./configure
+./configure --with-osl=system
 make
 make check
 make install
