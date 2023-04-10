@@ -158,6 +158,8 @@ g++ -DCLOOG_INT_GMP poc.cpp -lcloog-isl -lclan -losl -o poc
 ./poc scop.c
 ```
 
+You can find detailed documentation of these libraries in `doc/`, including data structure and function descriptions.
+
 ## Environment 
 
 **Requirements**: `autoconf`, `automake`, `libtool`, `GMP`, `bison >= 2.4`

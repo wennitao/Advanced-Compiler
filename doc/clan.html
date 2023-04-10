@@ -1,0 +1,1526 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This manual is for Clan version 0.8.1, a software
+which extracts the polyhedral representation of some parts of
+high level programs written in C, C++, C# or Java.
+
+It would be quite kind to refer the following paper in any publication that
+results from the use of the Clan software or its library (the reason to cite
+it is, amongst many other interesting things, it defines what is a SCoP,
+or static control part):
+
+@InProceedings{Bas03,
+  author =    {C\'edric Bastoul and Albert Cohen and Sylvain Girbal and
+               Saurabh Sharma and Olivier Temam},
+  title =     {Putting Polyhedral Loop Transformations to Work},
+  booktitle = {LCPC'16 International Workshop on Languages and
+               Compilers for Parallel Computers, LNCS 2958},
+  pages =     {209-225},
+  month =     {october},
+  year =      2003,
+  address =   {College Station, Texas}
+}
+
+Copyright (C) 2012 Ce'dric Bastoul.
+
+Permission is granted to copy, distribute and/or modify this document under
+the terms of the GNU Free Documentation License, Version 1.2
+published by the Free Software Foundation. To receive a copy of the
+GNU Free Documentation License, write to the Free Software Foundation, Inc.,
+59 Temple Place, Suite 330, Boston, MA  02111-1307 USA. -->
+<!-- Created by GNU Texinfo 6.7, http://www.gnu.org/software/texinfo/ -->
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Clan - a polyhedral representation extractor for high level programs</title>
+
+<meta name="description" content="Clan - a polyhedral representation extractor for high level programs">
+<meta name="keywords" content="Clan - a polyhedral representation extractor for high level programs">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<link href="#Top" rel="start" title="Top">
+<link href="#SEC_Contents" rel="contents" title="Table of Contents">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en">
+<h1 class="settitle" align="center">Clan - a polyhedral representation extractor for high level programs</h1>
+
+
+
+
+
+
+
+<span id="SEC_Contents"></span>
+<h2 class="contents-heading">Table of Contents</h2>
+
+<div class="contents">
+
+<ul class="no-bullet">
+  <li><a id="toc-Introduction-1" href="#Introduction">1 Introduction</a></li>
+  <li><a id="toc-Using-the-Clan-Software" href="#Clan-Software">2 Using the Clan Software</a>
+  <ul class="no-bullet">
+    <li><a id="toc-A-First-Example-1" href="#A-First-Example">2.1 A First Example</a></li>
+    <li><a id="toc-Writing-The-Input-File-1" href="#Writing-The-Input-File">2.2 Writing The Input File</a>
+    <ul class="no-bullet">
+      <li><a id="toc-SCoP-Pragmas-1" href="#SCoP-Pragmas">2.2.1 SCoP Pragmas</a></li>
+      <li><a id="toc-Semantical-Restrictions-1" href="#Semantical-Restrictions">2.2.2 Semantical Restrictions</a></li>
+      <li><a id="toc-Syntactical-Restrictions-1" href="#Syntactical-Restrictions">2.2.3 Syntactical Restrictions</a>
+      <ul class="no-bullet">
+        <li><a id="toc-Loop-Initialization-1" href="#Loop-Initialization">2.2.3.1 Loop Initialization</a></li>
+        <li><a id="toc-Loop-and-if-Condition-1" href="#Loop-and-if-Condition">2.2.3.2 Loop and <code>if</code> Condition</a></li>
+        <li><a id="toc-Loop-Step-1" href="#Loop-Step">2.2.3.3 Loop Step</a></li>
+        <li><a id="toc-Array-Subscript-1" href="#Array-Subscript">2.2.3.4 Array Subscript</a></li>
+      </ul></li>
+    </ul></li>
+    <li><a id="toc-Reading-The-Output-File-1" href="#Reading-The-Output-File">2.3 Reading The Output File</a></li>
+    <li><a id="toc-Calling-Clan-1" href="#Calling-Clan">2.4 Calling Clan</a></li>
+    <li><a id="toc-Clan-Options-1" href="#Clan-Options">2.5 Clan Options</a>
+    <ul class="no-bullet">
+      <li><a id="toc-Output-_002do-_003coutput_003e" href="#Output">2.5.1 Output <code>-o &lt;output&gt;</code></a></li>
+      <li><a id="toc-Autoscop-_002dautoscop" href="#Autoscop">2.5.2 Autoscop <code>-autoscop</code></a></li>
+      <li><a id="toc-Autopragma-_002dautopragma" href="#Autopragma">2.5.3 Autopragma <code>-autopragma</code></a></li>
+      <li><a id="toc-Autoinsert-_002dautoinsert" href="#Autoinsert">2.5.4 Autoinsert <code>-autoinsert</code></a></li>
+      <li><a id="toc-Inputscop-_002dinputscop" href="#Inputscop">2.5.5 Inputscop <code>-inputscop</code></a></li>
+      <li><a id="toc-Precision-_002dprecision-_003cvalue_003e" href="#Precision">2.5.6 Precision <code>-precision &lt;value&gt;</code></a></li>
+      <li><a id="toc-Bounded-Context-_002dboundedctxt" href="#Bounded-Context">2.5.7 Bounded Context <code>-boundedctxt</code></a></li>
+      <li><a id="toc-No-Loop-Context-_002dnoloopctxt" href="#No-Loop-Context">2.5.8 No Loop Context <code>-noloopctxt</code></a></li>
+      <li><a id="toc-No-Domain-Simplify-_002dnosimplify" href="#No-Domain-Simplify">2.5.9 No Domain Simplify <code>-nosimplify</code></a></li>
+      <li><a id="toc-Extbody-_002dextbody" href="#Extbody">2.5.10 Extbody <code>-extbody</code></a></li>
+      <li><a id="toc-Help-_002d_002dhelp-or-_002dh" href="#Help">2.5.11 Help <code>--help</code> or <code>-h</code></a></li>
+      <li><a id="toc-Version-_002d_002dversion-or-_002dv" href="#Version">2.5.12 Version <code>--version</code> or <code>-v</code></a></li>
+    </ul></li>
+  </ul></li>
+  <li><a id="toc-Using-the-Clan-Library" href="#Clan-Library">3 Using the Clan Library</a>
+  <ul class="no-bullet">
+    <li><a id="toc-Clan-Data-Structures-Description" href="#Clan-Data-Structures">3.1 Clan Data Structures Description</a>
+    <ul class="no-bullet">
+      <li><a id="toc-clan_005foptions_005ft-1" href="#clan_005foptions_005ft">3.1.1 clan_options_t</a></li>
+    </ul></li>
+    <li><a id="toc-Clan-Functions-Description" href="#Clan-Functions">3.2 Clan Functions Description</a>
+    <ul class="no-bullet">
+      <li><a id="toc-clan_005fscop_005fextract-1" href="#clan_005fscop_005fextract">3.2.1 clan_scop_extract</a></li>
+      <li><a id="toc-clan_005fscop_005finsert_005fpragmas-1" href="#clan_005fscop_005finsert_005fpragmas">3.2.2 clan_scop_insert_pragmas</a></li>
+      <li><a id="toc-clan_005fscop_005fprint-1" href="#clan_005fscop_005fprint">3.2.3 clan_scop_print</a></li>
+      <li><a id="toc-Allocation-and-Initialization-Functions-1" href="#Allocation-and-Initialization-Functions">3.2.4 Allocation and Initialization Functions</a></li>
+      <li><a id="toc-Memory-Deallocation-Functions-1" href="#Memory-Deallocation-Functions">3.2.5 Memory Deallocation Functions</a></li>
+      <li><a id="toc-Printing-Functions-1" href="#Printing-Functions">3.2.6 Printing Functions</a></li>
+    </ul></li>
+    <li><a id="toc-Example-of-Library-Use-1" href="#Example-of-Library-Use">3.3 Example of Library Use</a></li>
+  </ul></li>
+  <li><a id="toc-Installing-Clan" href="#Installing">4 Installing Clan</a>
+  <ul class="no-bullet">
+    <li><a id="toc-License-1" href="#License">4.1 License</a></li>
+    <li><a id="toc-Requirements-1" href="#Requirements">4.2 Requirements</a>
+    <ul class="no-bullet">
+      <li><a id="toc-OpenScop-Library-_0028bundled_0029" href="#OpenScop-Library">4.2.1 OpenScop Library (bundled)</a></li>
+    </ul></li>
+    <li><a id="toc-Clan-Basic-Installation" href="#Basic-Installation">4.3 Clan Basic Installation</a></li>
+    <li><a id="toc-Optional-Features-1" href="#Optional-Features">4.4 Optional Features</a></li>
+    <li><a id="toc-Uninstallation-1" href="#Uninstallation">4.5 Uninstallation</a></li>
+  </ul></li>
+  <li><a id="toc-Documentation-1" href="#Documentation">5 Documentation</a></li>
+  <li><a id="toc-Development-1" href="#Development">6 Development</a>
+  <ul class="no-bullet">
+    <li><a id="toc-Copyright-Issue-1" href="#Copyright-Issue">6.1 Copyright Issue</a></li>
+    <li><a id="toc-Repository-1" href="#Repository">6.2 Repository</a></li>
+    <li><a id="toc-Coding-Style-1" href="#Coding-Style">6.3 Coding Style</a></li>
+  </ul></li>
+  <li><a id="toc-References-1" href="#References">7 References</a></li>
+</ul>
+</div>
+
+
+<span id="Top"></span><div class="header">
+<p>
+Next: <a href="#Introduction" accesskey="n" rel="next">Introduction</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Clan"></span><h1 class="top">Clan</h1>
+
+<p>This manual is for Clan version 0.8.1, a software
+which extracts the polyhedral representation of some parts of
+high level programs written in C, C++, C# or Java.
+</p>
+<p>It would be quite kind to refer the following paper in any publication that
+results from the use of the Clan software or its library (the reason to cite
+it is, amongst many other interesting things, it defines what is a <em>SCoP</em>,
+or <em>static control part</em>):
+</p>
+<div class="example">
+<pre class="example">@InProceedings{Bas03,
+&nbsp;&nbsp;author =&nbsp;&nbsp;&nbsp;&nbsp;{C\'edric Bastoul and Albert Cohen and Sylvain Girbal and
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Saurabh Sharma and Olivier Temam},
+&nbsp;&nbsp;title =&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{Putting Polyhedral Loop Transformations to Work},
+&nbsp;&nbsp;booktitle =&nbsp;{LCPC'16 International Workshop on Languages and
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Compilers for Parallel Computers, LNCS 2958},
+&nbsp;&nbsp;pages =&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{209--225},
+&nbsp;&nbsp;month =&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{october},
+&nbsp;&nbsp;year =&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2003,
+&nbsp;&nbsp;address =&nbsp;&nbsp;&nbsp;{College Station, Texas}
+}
+</pre></div>
+
+<p>Copyright &copy; 2012 C&eacute;dric Bastoul.
+</p>
+<p>Permission is granted to copy, distribute and/or modify this document under
+the terms of the GNU Free Documentation License, Version 1.2
+published by the Free Software Foundation. To receive a copy of the
+GNU Free Documentation License, write to the Free Software Foundation, Inc.,
+59 Temple Place, Suite 330, Boston, MA  02111-1307 USA.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="#Introduction" accesskey="1">Introduction</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Clan-Software" accesskey="2">Clan Software</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Clan-Library" accesskey="3">Clan Library</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Installing" accesskey="4">Installing</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Documentation" accesskey="5">Documentation</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Development" accesskey="6">Development</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#References" accesskey="7">References</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+
+
+
+<hr>
+<span id="Introduction"></span><div class="header">
+<p>
+Next: <a href="#Clan-Software" accesskey="n" rel="next">Clan Software</a>, Previous: <a href="#Top" accesskey="p" rel="prev">Top</a>, Up: <a href="#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Introduction-1"></span><h2 class="chapter">1 Introduction</h2>
+<p>Clan is a free software and library which translates some particular parts of
+high level programs written in C, C++, C# or Java into a polyhedral
+representation, namely OpenScop (see <a href="#Bas12">Bas12</a>).
+This representation may be manipulated by other tools to, e.g., achieve
+complex analyses or program restructurations (for optimization,
+parallelization or any other kind of manipulation).
+It has been created to avoid tedious and
+error-prone input file writing for polyhedral tools (such as CLooG, LeTSeE,
+Candl etc.). Using Clan, the user has to deal with source codes based on C
+grammar only (as C, C++, C# or Java).
+</p>
+<p>Clan stands for <em>Chunky Loop ANalyzer</em>: it is a part of the Chunky
+project, a research tool for data locality improvement (see <a href="#Bas03a">Bas03a</a>).
+It is designed to be the front-end of any source-to-source automatic optimizers
+and/or parallelizers. The OpenScop output format has been chosen to be polyhedral
+library independent, so Clan may integrate any polyhedral compilation
+framework easily. Clan has been successfuly integrated to
+PoCC (<a href="http://pocc.sourceforge.net">http://pocc.sourceforge.net</a>) and Pluto
+(<a href="http://pluto-compiler.sourceforge.net">http://pluto-compiler.sourceforge.net</a>) high-level compilers.
+The OpenScop format for polyhedral
+representation of programs, as well as an introduction to the polyhedral model
+for dummies, is presented in an external document, see <a href="#Bas12">Bas12</a>. If the
+reader is not familiar with such a representation, we highly recommend him/her
+to read that document first.
+</p>
+<p>Clan is a very basic tool since it is only a translator from a given program
+representation to another representation. Nevertheless the current version is
+still under evaluation, and there is no guarantee that the upward compatibility
+will be respected, even if we do think so. A lot of reports are necessary
+to freeze the library API and it is much probable that Clan will accept
+larger and larger subsets of C over time (which should not introduce upward
+compatibility problem). You are very welcome and encouraged to send reports
+on bugs, wishes, critics, comments, suggestions or (please !) successful
+experiences to <a href="mailto:clan-development@googlegroups.com">clan-development@googlegroups.com</a>.
+</p>
+
+<hr>
+<span id="Clan-Software"></span><div class="header">
+<p>
+Next: <a href="#Clan-Library" accesskey="n" rel="next">Clan Library</a>, Previous: <a href="#Introduction" accesskey="p" rel="prev">Introduction</a>, Up: <a href="#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Using-the-Clan-Software"></span><h2 class="chapter">2 Using the Clan Software</h2>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="#A-First-Example" accesskey="1">A First Example</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Writing-The-Input-File" accesskey="2">Writing The Input File</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Reading-The-Output-File" accesskey="3">Reading The Output File</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Calling-Clan" accesskey="4">Calling Clan</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Clan-Options" accesskey="5">Clan Options</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+<hr>
+<span id="A-First-Example"></span><div class="header">
+<p>
+Next: <a href="#Writing-The-Input-File" accesskey="n" rel="next">Writing The Input File</a>, Up: <a href="#Clan-Software" accesskey="u" rel="up">Clan Software</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="A-First-Example-1"></span><h3 class="section">2.1 A First Example</h3>
+<p>Clan takes as input a source code file than can be written in either C or
+C++ or C# or Java (or any other imperative language close enough
+to C). It translates some parts of the program to a polyhedral, matrix-based,
+representation called OpenScop.
+We call such a program part a <em>static control part</em>, or SCoP fo short.
+</p>
+<p>Clan can find automatically the program parts that it is able to translate.
+However, as it will be detailed momentarily, to be a real SCoP, those code
+parts must have some properties which are beyond the analysis power of Clan
+(like pointer alias or function side-effects analysis).
+More complex tools like the GRAPHITE
+framework of GCC (<a href="http://gcc.gnu.org/wiki/Graphite">http://gcc.gnu.org/wiki/Graphite</a>) or the Polly
+framework of LLVM (<a href="http://polly.grosser.es">http://polly.grosser.es</a>) are devoted to such a
+complex, highly technical problem. Using Clan, the user should rather specify
+thanks to pragmas where begin the SCoPs to process, and where they finish.
+</p>
+<p>For instance, let us consider the following source code in C of a matrix-matrix
+multiply program that reads two matrices, achieves the multiply then prints
+the result. Let us also consider that the user is only interested in the
+matrix-matrix multiply kernel:
+</p>
+<div class="example">
+<pre class="example">/* matmul.c 128*128 matrix multiply */
+#include &lt;stdio.h&gt;
+#define N 128
+
+int main() {
+  int   i,j,k;
+  float a[N][N], b[N][N], c[N][N];
+
+  /* We read matrix a then matrix b */
+  for (i = 0; i &lt; N; i++)
+    for (j = 0; j &lt; N; j++)
+      scanf(&quot; %f&quot;,&amp;a[i][j]);
+  for (i = 0; i &lt; N; i++)
+    for (j = 0; j &lt; N; j++)
+      scanf(&quot; %f&quot;,&amp;b[i][j]);
+
+  /* c = a * b */
+#pragma scop
+  for (i = 0; i &lt; N; i++)
+    for (j = 0; j &lt; N; j++) {
+      c[i][j] = 0.0;
+      for (k = 0; k &lt; N; k++)
+        c[i][j] = c[i][j] + a[i][k]*b[k][j];
+    }
+#pragma endscop
+
+  /* We print matrix c */
+  for (i = 0; i &lt; N; i++) {
+    for (j = 0; j &lt; N; j++)
+      printf(&quot;%6.2f &quot;,c[i][j]);
+    printf(&quot;\n&quot;);
+  }
+
+  return 0;
+}
+</pre></div>
+
+<p>The tags to ask Clan to consider a given part of the code are provided thanks
+to the pragmas <code>#pragma scop</code> and  <code>#pragma endscop</code>. It can have
+different forms depending on the input language. This is explained in
+a further section (see <a href="#Writing-The-Input-File">Writing The Input File</a>).
+</p>
+<p>This source code file may be called &lsquo;<samp>matmul.c</samp>&rsquo;
+(this example is provided in the Clan distribution as
+<code>test/matmul.c</code>) and we can ask Clan to process it
+and to generate the polyhedral representation by a simple call to Clan
+with this file as input: &lsquo;<samp>clan matmul.c</samp>&rsquo;. By default, Clan will print
+the OpenScop polyhedral representation on the standard output:
+</p>
+<div class="example">
+<pre class="example"># [File Generated by Clan 0.7.0]
+&lt;OpenScop&gt;
+
+# =============================================== Global
+# Language
+C
+
+# Context
+CONTEXT
+0 3 0 0 0 1
+
+# Parameters are provided
+1
+&lt;strings&gt;
+N
+&lt;/strings&gt;
+
+# Number of statements
+2
+
+# =============================================== Statement 1
+# Number of relations describing the statement:
+3
+
+# ----------------------------------------------  1.1 Domain
+DOMAIN
+4 5 2 0 0 1
+# e/i| i   j | N | 1  
+   1   1   0   0   0    ## i &gt;= 0
+   1  -1   0   1  -1    ## -i+N-1 &gt;= 0
+   1   0   1   0   0    ## j &gt;= 0
+   1   0  -1   1  -1    ## -j+N-1 &gt;= 0
+
+# ----------------------------------------------  1.2 Scattering
+SCATTERING
+5 10 5 2 0 1
+# e/i|s1  s2  s3  s4  s5 | i   j | N | 1  
+   0  -1   0   0   0   0   0   0   0   0    ## s1 == 0
+   0   0  -1   0   0   0   1   0   0   0    ## s2 == i
+   0   0   0  -1   0   0   0   0   0   0    ## s3 == 0
+   0   0   0   0  -1   0   0   1   0   0    ## s4 == j
+   0   0   0   0   0  -1   0   0   0   0    ## s5 == 0
+
+# ----------------------------------------------  1.3 Access
+WRITE
+3 8 3 2 0 1
+# e/i|Arr [1] [2]| i   j | N | 1  
+   0  -1   0   0   0   0   0   1    ## Arr == c
+   0   0  -1   0   1   0   0   0    ## [1] == i
+   0   0   0  -1   0   1   0   0    ## [2] == j
+
+# ----------------------------------------------  1.4 Body
+# Statement body is provided
+1
+&lt;body&gt;
+# Number of original iterators
+2
+# List of original iterators
+i j
+# Statement body expression
+c[i][j] = 0.0;
+&lt;/body&gt;
+
+# =============================================== Statement 2
+# Number of relations describing the statement:
+6
+
+# ----------------------------------------------  2.1 Domain
+DOMAIN
+6 6 3 0 0 1
+# e/i| i   j   k | N | 1  
+   1   1   0   0   0   0    ## i &gt;= 0
+   1  -1   0   0   1  -1    ## -i+N-1 &gt;= 0
+   1   0   1   0   0   0    ## j &gt;= 0
+   1   0  -1   0   1  -1    ## -j+N-1 &gt;= 0
+   1   0   0   1   0   0    ## k &gt;= 0
+   1   0   0  -1   1  -1    ## -k+N-1 &gt;= 0
+
+# ----------------------------------------------  2.2 Scattering
+SCATTERING
+7 13 7 3 0 1
+# e/i|s1  s2  s3  s4  s5  s6  s7 | i   j   k | N | 1  
+   0  -1   0   0   0   0   0   0   0   0   0   0   0    ## s1 == 0
+   0   0  -1   0   0   0   0   0   1   0   0   0   0    ## s2 == i
+   0   0   0  -1   0   0   0   0   0   0   0   0   0    ## s3 == 0
+   0   0   0   0  -1   0   0   0   0   1   0   0   0    ## s4 == j
+   0   0   0   0   0  -1   0   0   0   0   0   0   1    ## s5 == 1
+   0   0   0   0   0   0  -1   0   0   0   1   0   0    ## s6 == k
+   0   0   0   0   0   0   0  -1   0   0   0   0   0    ## s7 == 0
+
+# ----------------------------------------------  2.3 Access
+WRITE
+3 9 3 3 0 1
+# e/i|Arr [1] [2]| i   j   k | N | 1  
+   0  -1   0   0   0   0   0   0   1    ## Arr == c
+   0   0  -1   0   1   0   0   0   0    ## [1] == i
+   0   0   0  -1   0   1   0   0   0    ## [2] == j
+
+READ
+3 9 3 3 0 1
+# e/i|Arr [1] [2]| i   j   k | N | 1  
+   0  -1   0   0   0   0   0   0   1    ## Arr == c
+   0   0  -1   0   1   0   0   0   0    ## [1] == i
+   0   0   0  -1   0   1   0   0   0    ## [2] == j
+
+READ
+3 9 3 3 0 1
+# e/i|Arr [1] [2]| i   j   k | N | 1  
+   0  -1   0   0   0   0   0   0   2    ## Arr == a
+   0   0  -1   0   1   0   0   0   0    ## [1] == i
+   0   0   0  -1   0   0   1   0   0    ## [2] == k
+
+READ
+3 9 3 3 0 1
+# e/i|Arr [1] [2]| i   j   k | N | 1  
+   0  -1   0   0   0   0   0   0   3    ## Arr == b
+   0   0  -1   0   0   0   1   0   0    ## [1] == k
+   0   0   0  -1   0   1   0   0   0    ## [2] == j
+
+# ----------------------------------------------  2.4 Body
+# Statement body is provided
+1
+&lt;body&gt;
+# Number of original iterators
+3
+# List of original iterators
+i j k
+# Statement body expression
+c[i][j] = c[i][j] + a[i][k]*b[k][j];
+&lt;/body&gt;
+
+&lt;/OpenScop&gt;
+</pre></div>
+
+<p>We will not describe here the structure and the components of this
+output. This is done in depth in a separated document, along with
+a complete introduction to the polyhedral representation of programs
+for the dummies (see <a href="#Bas12">Bas12</a>). This file format, called <code>OpenScop</code> has
+been designed to be the possible input file format of most polyhedral tools.
+If you have the minimum knowledge about the polyhedral representation
+of programs, you should probably already feel familiar with this file format.
+</p>
+
+<hr>
+<span id="Writing-The-Input-File"></span><div class="header">
+<p>
+Next: <a href="#Reading-The-Output-File" accesskey="n" rel="next">Reading The Output File</a>, Previous: <a href="#A-First-Example" accesskey="p" rel="prev">A First Example</a>, Up: <a href="#Clan-Software" accesskey="u" rel="up">Clan Software</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Writing-The-Input-File-1"></span><h3 class="section">2.2 Writing The Input File</h3>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="#SCoP-Pragmas" accesskey="1">SCoP Pragmas</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Semantical-Restrictions" accesskey="2">Semantical Restrictions</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Syntactical-Restrictions" accesskey="3">Syntactical Restrictions</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+<p>The input file of Clan is a source code written in any language based on
+C for the <code>for</code> loop, the <code>if</code> and for the array accesses.
+C, C++, Java and C# are good examples that should work pretty well with Clan,
+as long as the code parts to translate would be correct in C.
+Clan will only translate program parts which must respect syntactical and
+semantical restrictions over plain C, and which are delimited with specific
+pragmas. Those pragmas and restrictions are detailed in the next sections.
+</p>
+<hr>
+<span id="SCoP-Pragmas"></span><div class="header">
+<p>
+Next: <a href="#Semantical-Restrictions" accesskey="n" rel="next">Semantical Restrictions</a>, Up: <a href="#Writing-The-Input-File" accesskey="u" rel="up">Writing The Input File</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="SCoP-Pragmas-1"></span><h4 class="subsection">2.2.1 SCoP Pragmas</h4>
+<p>The input file may contain several code parts to translate delimited
+<strong>by the user</strong> thanks to pragmas. Those pragmas indicate to Clan
+which program parts needs to be translated, and more important, which
+program parts can be translated to a polyhedral representation.
+We call them SCoPs (for Static Control Parts). Those parts must respect
+several syntactical and semantical properties which ensure an easy and safe
+translation to a polyhedral representation.
+</p>
+<p>In C, C++ and C#, the pragma to tag the beginning of a SCoP is:
+</p><div class="example">
+<pre class="example">#pragma scop
+</pre></div>
+<p>and the pragma to tag the end of a SCoP is:
+</p><div class="example">
+<pre class="example">#pragma endscop
+</pre></div>
+
+<p>In Java, the pragma to tag the beginning of a SCoP is:
+</p><div class="example">
+<pre class="example">/*@ scop */
+</pre></div>
+<p>and the pragma to tag the end of a SCoP is:
+</p><div class="example">
+<pre class="example">/*@ end scop */
+</pre></div>
+
+<p>Clan trusts the user: it will not check hardly whether a program part to
+translate is actually a SCoP or not. It will only try to translate the program
+part to a polyhedral representation. If there is a syntactical issue, it will
+complain and try to provide the user with some hints about the problem. If
+there is a semantical issue, it will not detect it. Hence, SCoP pragmas must
+be placed with caution.
+</p>
+<hr>
+<span id="Semantical-Restrictions"></span><div class="header">
+<p>
+Next: <a href="#Syntactical-Restrictions" accesskey="n" rel="next">Syntactical Restrictions</a>, Previous: <a href="#SCoP-Pragmas" accesskey="p" rel="prev">SCoP Pragmas</a>, Up: <a href="#Writing-The-Input-File" accesskey="u" rel="up">Writing The Input File</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Semantical-Restrictions-1"></span><h4 class="subsection">2.2.2 Semantical Restrictions</h4>
+
+<p>There are a few but very important semantical restrictions a program part
+between SCoP pragmas must satisfy:
+</p><ul>
+<li> All functions called within the SCoP are pure, i.e., they work only
+      with their respective input parameters and local variables and have
+      no side effects, e.g., they will not use a global variable or
+      step outside array boundaries.
+</li><li> No aliasing of array names is possible within the SCoP, e.g., if two
+      arrays (or pointers) refer to the same memory location, they must
+      have different names.
+</li><li> Pointer references behave like variables or arrays, e.g., function
+      pointers are not allowed.
+</li></ul>
+<p>Clan doesn&rsquo;t have (and will much probably never have) the analysis power
+to check for those properties, hence, it is the responsibility of the
+user to ensure they are satisfied. The action of setting the SCoP pragmas
+states explicitely that they are respected. If they are not, Clan&rsquo;s
+behavior is undefined.
+</p>
+<hr>
+<span id="Syntactical-Restrictions"></span><div class="header">
+<p>
+Previous: <a href="#Semantical-Restrictions" accesskey="p" rel="prev">Semantical Restrictions</a>, Up: <a href="#Writing-The-Input-File" accesskey="u" rel="up">Writing The Input File</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Syntactical-Restrictions-1"></span><h4 class="subsection">2.2.3 Syntactical Restrictions</h4>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="#Loop-Initialization" accesskey="1">Loop Initialization</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Loop-and-if-Condition" accesskey="2">Loop and if Condition</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Loop-Step" accesskey="3">Loop Step</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Array-Subscript" accesskey="4">Array Subscript</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+<p>Clan only accepts a subset of C between SCoP pragmas. The big picture is,
+Clan is able to translate loop-based codes where loop bounds, <code>if</code>
+conditions and array subscripts are made of affine expressions involving
+only outer loop iterators, integer constants (a.k.a. parameters) and
+integer literals. The following general restrictions apply to all the
+code between SCoP pragmas:
+</p><ul>
+<li> The only allowed control keywords are <code>for</code>, <code>while</code>,
+      <code>if</code> and <code>else</code>, with restrictions as described below.
+</li><li> Declarations are not allowed.
+</li><li> Any C instruction without control keywords is accepted, with
+      restrictions for array subscripts as described below.
+</li></ul>
+
+<p>More specific restrictions apply to the control statements and the
+array subscript. They refer to affine expressions and specific operators:
+</p><ul>
+<li> Affine expressions are additive forms of loop iterators
+      (e.g., <code>i</code>), parameters (e.g., <code>N</code>) and integers, with
+      integer coefficients, e.g., <code>7*i + 13*N + 42</code>. Expressions
+      which simplify to affine forms are accepted as valid affine
+      expresions, e.g., <code>3*(i*2 + N)</code>, as long as the only operators
+      in such expressions are <code>+</code>, <code>-</code> and <code>*</code>.
+</li><li> Four particular operators may be used in some expressions: (1) the
+      <code>max</code> operator returns the maximum between an affine
+      expression or a <code>max</code> expression and another affine expression
+      or <code>max</code> expression, e.g., <code>max(i+1,max(j,n))</code> is
+      possible. (2) The <code>min</code> operator works like the <code>max</code>
+      operator but for minimum. (3) The <code>ceild</code> operator gives
+      the integer ceiling of an affine expression divided by an integer,
+      e.g., <code>ceild(2*i+n, 3)</code> is a correct use or the operator.
+      (4) The <code>floord</code> operator gives the integer floor of an affine
+      expression divided by an integer, e.g., <code>floord(2*i+n, 3)</code> is
+      a correct use of the operator.
+</li></ul>
+
+<p>Four specific zones in SCoP codes are restricted:
+</p><div class="example">
+<pre class="example">for (initialization; condition; step)
+  if (condition)
+    ... [subscript] ...
+</pre></div>
+
+<ul>
+<li> the first part of <code>for</code> loop expressions, called loop initialization,
+</li><li> the second part of <code>for</code> loop expressions, called loop condition, and
+      the condition of <code>if</code> conditionals, share the same kind of restriction,
+</li><li> the third part of <code>for</code> loop expressions, called loop step,
+</li><li> the array subscripts.
+</li></ul>
+<p>Those restrictions are detailed in the next sections.
+</p>
+<hr>
+<span id="Loop-Initialization"></span><div class="header">
+<p>
+Next: <a href="#Loop-and-if-Condition" accesskey="n" rel="next">Loop and if Condition</a>, Up: <a href="#Syntactical-Restrictions" accesskey="u" rel="up">Syntactical Restrictions</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Loop-Initialization-1"></span><h4 class="subsubsection">2.2.3.1 Loop Initialization</h4>
+<p>Each loop initialization must be an assignment of the loop counter such that the
+right hand side is one or several affine expressions aggregated with <code>max</code>
+(resp. <code>min</code>) operators if the loop step is positive (resp. negative).
+Optionally, the loop iterator can be declared (as an <code>int</code>) in the loop
+initialization part.
+</p>
+<p>For instance:
+</p><ul>
+<li> <code>j = 3*i + 2*N</code> is correct.
+</li><li> <code>int j = 3*i + 2*N</code> is correct.
+</li><li> <code>j = ceild(i + N, 10)</code> is correct if the <code>j</code>-loop step is positive.
+</li><li> <code>j = max(i, ceild(N, 3))</code> is correct if the <code>j</code>-loop step is positive.
+</li><li> <code>j = min(min(N,10), 7*i)</code> is correct if the <code>j</code>-loop step is negative.
+</li><li> <code>j = min(max(i, 1), N)</code> is NOT correct: mixed <code>min</code> and <code>max</code>.
+</li></ul>
+
+<hr>
+<span id="Loop-and-if-Condition"></span><div class="header">
+<p>
+Next: <a href="#Loop-Step" accesskey="n" rel="next">Loop Step</a>, Previous: <a href="#Loop-Initialization" accesskey="p" rel="prev">Loop Initialization</a>, Up: <a href="#Syntactical-Restrictions" accesskey="u" rel="up">Syntactical Restrictions</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Loop-and-if-Condition-1"></span><h4 class="subsubsection">2.2.3.2 Loop and <code>if</code> Condition</h4>
+
+<p>Each loop or <code>if</code> condition must be a (composition of) constraint(s) on
+affine expressions only.
+</p><ul>
+<li> Supported C operators are <code>&gt;</code>, <code>&gt;=</code>, <code>&lt;</code>, <code>&lt;=</code>,
+      <code>==</code>, <code>!=</code>, <code>!</code>, <code>&amp;&amp;</code> and <code>||</code>.
+</li><li> <code>min</code> and <code>max</code> operators can be used to aggregate expressions
+      in <code>&gt;</code>, <code>&gt;=</code>, <code>&lt;</code> and <code>&lt;=</code> constraints. <code>min</code>
+      (resp. <code>max</code>) expressions must be in the greater (resp. lower)
+      side of the constraints.
+</li><li> Constraints involving the modulo operator are possible in the following
+      form only: let <code>a</code> be an affine expression and <code>x</code> and <code>y</code> two
+      positive integers, then the condition <code>(a % x == y)</code> is accepted.
+</li><li> Function calls alone can be used as valid <code>if</code> conditions.
+</li></ul>
+
+<p>For instance:
+</p><ul>
+<li> <code>i + 2*j &lt; N</code> is correct.
+</li><li> <code>max(i, j) &lt; floord(N, 7)</code> is correct.
+</li><li> <code>N&gt;i &amp;&amp; !(j&gt;0 || N!=1)</code> is correct.
+</li><li> <code>((2*i+1)%3 == 1) &amp;&amp; i&gt;j</code> is correct.
+</li><li> <code>func(A[i], b)</code> is correct in a <code>if</code> condition.
+</li><li> <code>min(2*i, N) &lt; 0</code> is NOT correct: <code>min</code> on the lower side.
+</li><li> <code>i + 2</code> is NOT correct: use <code>(i + 2) != 0</code> instead.
+</li></ul>
+
+<hr>
+<span id="Loop-Step"></span><div class="header">
+<p>
+Next: <a href="#Array-Subscript" accesskey="n" rel="next">Array Subscript</a>, Previous: <a href="#Loop-and-if-Condition" accesskey="p" rel="prev">Loop and if Condition</a>, Up: <a href="#Syntactical-Restrictions" accesskey="u" rel="up">Syntactical Restrictions</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Loop-Step-1"></span><h4 class="subsubsection">2.2.3.3 Loop Step</h4>
+<p>Updating the loop iterator is only allowed in the loop step part.
+It must be done by adding an integer to the previous
+iterator value. Let <code>i</code> be a loop iterator and <code>x</code> an integer
+(a literal like <code>42</code>, not an integer variable),
+the following forms are accepted for the loop step part:
+<code>i++</code>, <code>++i</code>, <code>i--</code>, <code>--i</code>, <code>i += x</code>, <code>i -= x</code>,
+<code>i = i+x</code> and <code>i = i-x</code>. The iterator can optionally be enclosed
+in parentheses in this part: <code>++(i)</code>.
+</p>
+<hr>
+<span id="Array-Subscript"></span><div class="header">
+<p>
+Previous: <a href="#Loop-Step" accesskey="p" rel="prev">Loop Step</a>, Up: <a href="#Syntactical-Restrictions" accesskey="u" rel="up">Syntactical Restrictions</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Array-Subscript-1"></span><h4 class="subsubsection">2.2.3.4 Array Subscript</h4>
+<p>Array subscripts must be affine expressions.
+</p>
+
+
+<hr>
+<span id="Reading-The-Output-File"></span><div class="header">
+<p>
+Next: <a href="#Calling-Clan" accesskey="n" rel="next">Calling Clan</a>, Previous: <a href="#Writing-The-Input-File" accesskey="p" rel="prev">Writing The Input File</a>, Up: <a href="#Clan-Software" accesskey="u" rel="up">Clan Software</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Reading-The-Output-File-1"></span><h3 class="section">2.3 Reading The Output File</h3>
+
+<p>The output text file of Clan provides an explicit polyhedral representation of
+a static control part. The output file format is OpenScop, see <a href="#Bas12">Bas12</a>.
+It has been designed by various researchers in polyhedral compilation from
+various institutions. It builds on previous popular polyhedral file formats
+like <em>.cloog</em> to provide a unique, extensible file format to every
+polyhedral compilation tools (including CLooG) while
+being polyhedral library independent. To guarantee an up-to-date
+information, the reader is invited to read the OpenScop document
+directly see <a href="#Bas12">Bas12</a>.
+</p>
+
+
+<hr>
+<span id="Calling-Clan"></span><div class="header">
+<p>
+Next: <a href="#Clan-Options" accesskey="n" rel="next">Clan Options</a>, Previous: <a href="#Reading-The-Output-File" accesskey="p" rel="prev">Reading The Output File</a>, Up: <a href="#Clan-Software" accesskey="u" rel="up">Clan Software</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Calling-Clan-1"></span><h3 class="section">2.4 Calling Clan</h3>
+<p>Clan is called by the following command:
+</p><div class="example">
+<pre class="example">       clan [ options | file... ]
+</pre></div>
+<p>The default behavior of Clan is to read the input source code from a file and
+to print the generated OpenScop file on the standard output.
+Clan&rsquo;s behavior and the output file are under the user control thanks
+to some options which will be detailed momentarily (see <a href="#Clan-Options">Clan Options</a>).
+<code>file</code> is the input file list (Clan may extract SCoPs from several input files).
+<code>stdin</code> is a special value: when used, input is the standard input and no
+other input file can be provided. For instance, we can call Clan to process the
+input file <code>basic.c</code> with default options by typing:
+<code>clan basic.c</code> or <code>more basic.c | clan stdin</code>
+(usual <code>more basic.c | clan -</code> works too).
+</p>
+
+<hr>
+<span id="Clan-Options"></span><div class="header">
+<p>
+Previous: <a href="#Calling-Clan" accesskey="p" rel="prev">Calling Clan</a>, Up: <a href="#Clan-Software" accesskey="u" rel="up">Clan Software</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Clan-Options-1"></span><h3 class="section">2.5 Clan Options</h3>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="#Output" accesskey="1">Output</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Autoscop" accesskey="2">Autoscop</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Autopragma" accesskey="3">Autopragma</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Autoinsert" accesskey="4">Autoinsert</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Inputscop" accesskey="5">Inputscop</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Precision" accesskey="6">Precision</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Bounded-Context" accesskey="7">Bounded Context</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#No-Loop-Context" accesskey="8">No Loop Context</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#No-Domain-Simplify" accesskey="9">No Domain Simplify</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Extbody">Extbody</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Help">Help</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Version">Version </a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+<hr>
+<span id="Output"></span><div class="header">
+<p>
+Next: <a href="#Autoscop" accesskey="n" rel="next">Autoscop</a>, Up: <a href="#Clan-Options" accesskey="u" rel="up">Clan Options</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Output-_002do-_003coutput_003e"></span><h4 class="subsection">2.5.1 Output <code>-o &lt;output&gt;</code></h4>
+
+<p><code>-o &lt;output&gt;</code>: this option sets the output file. <code>stdout</code> is a
+     special value: when used, output is standard output.
+     Default value is <code>stdout</code>.
+</p>
+<hr>
+<span id="Autoscop"></span><div class="header">
+<p>
+Next: <a href="#Autopragma" accesskey="n" rel="next">Autopragma</a>, Previous: <a href="#Output" accesskey="p" rel="prev">Output</a>, Up: <a href="#Clan-Options" accesskey="u" rel="up">Clan Options</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Autoscop-_002dautoscop"></span><h4 class="subsection">2.5.2 Autoscop <code>-autoscop</code></h4>
+
+<p><code>-autoscop</code>: this option asks Clan to automatically find SCoPs within
+the input souce file. This options should be used with care because Clan
+will only ensure the syntactical restrictions are respected
+(see <a href="#Semantical-Restrictions">Semantical Restrictions</a>), but not the semantical restrictions
+(see <a href="#Semantical-Restrictions">Semantical Restrictions</a>). If the input file already contains
+SCoP pragmas, this option will leave them unmodified (as a consequence
+it will not be possible to include the user-SCoPs to larger automatically
+detected SCoPs).
+</p>
+<hr>
+<span id="Autopragma"></span><div class="header">
+<p>
+Next: <a href="#Autoinsert" accesskey="n" rel="next">Autoinsert</a>, Previous: <a href="#Autoscop" accesskey="p" rel="prev">Autoscop</a>, Up: <a href="#Clan-Options" accesskey="u" rel="up">Clan Options</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Autopragma-_002dautopragma"></span><h4 class="subsection">2.5.3 Autopragma <code>-autopragma</code></h4>
+
+<p><code>-autopragma</code>: this option asks Clan to automatically generate a
+copy of the input file with SCoP pragmas inserted around
+automatically detected SCoPs. This options works in the same way
+as Autoscop (see <a href="#Autoscop">Autoscop</a>), but outputs a code instead of the
+OpenScop representation.
+</p>
+<hr>
+<span id="Autoinsert"></span><div class="header">
+<p>
+Next: <a href="#Inputscop" accesskey="n" rel="next">Inputscop</a>, Previous: <a href="#Autopragma" accesskey="p" rel="prev">Autopragma</a>, Up: <a href="#Clan-Options" accesskey="u" rel="up">Clan Options</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Autoinsert-_002dautoinsert"></span><h4 class="subsection">2.5.4 Autoinsert <code>-autoinsert</code></h4>
+
+<p><code>-autoinsert</code>: this option is equivalent to <code>-autopragma</code>
+but it inserts SCoP pragmas directly in the input file. Use with care:
+check with <code>-autopragma</code> first.
+</p>
+<hr>
+<span id="Inputscop"></span><div class="header">
+<p>
+Next: <a href="#Precision" accesskey="n" rel="next">Precision</a>, Previous: <a href="#Autoinsert" accesskey="p" rel="prev">Autoinsert</a>, Up: <a href="#Clan-Options" accesskey="u" rel="up">Clan Options</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Inputscop-_002dinputscop"></span><h4 class="subsection">2.5.5 Inputscop <code>-inputscop</code></h4>
+
+<p><code>-inputscop</code>: this option asks Clan to use an OpenScop input
+instead of a source code (this is supposed to be a pass-through
+process).
+</p>
+<hr>
+<span id="Precision"></span><div class="header">
+<p>
+Next: <a href="#Bounded-Context" accesskey="n" rel="next">Bounded Context</a>, Previous: <a href="#Inputscop" accesskey="p" rel="prev">Inputscop</a>, Up: <a href="#Clan-Options" accesskey="u" rel="up">Clan Options</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Precision-_002dprecision-_003cvalue_003e"></span><h4 class="subsection">2.5.6 Precision <code>-precision &lt;value&gt;</code></h4>
+
+<p><code>-precision</code>: this option asks Clan to work using a given
+precision for the various integer elements, <code>value</code> may be
+<code>32</code> for 32 bits, <code>64</code> for 64 bits (the default) or
+<code>0</code> fot GMP (the installed OpenScop library must have been
+compiled with GMP support for this option to apply).
+</p>
+<hr>
+<span id="Bounded-Context"></span><div class="header">
+<p>
+Next: <a href="#No-Loop-Context" accesskey="n" rel="next">No Loop Context</a>, Previous: <a href="#Precision" accesskey="p" rel="prev">Precision</a>, Up: <a href="#Clan-Options" accesskey="u" rel="up">Clan Options</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Bounded-Context-_002dboundedctxt"></span><h4 class="subsection">2.5.7 Bounded Context <code>-boundedctxt</code></h4>
+
+<p><code>-boundedctxt</code>: this option asks Clan to generate context
+relations such that every parameter is considered to be &gt;= -1.
+</p>
+<hr>
+<span id="No-Loop-Context"></span><div class="header">
+<p>
+Next: <a href="#No-Domain-Simplify" accesskey="n" rel="next">No Domain Simplify</a>, Previous: <a href="#Bounded-Context" accesskey="p" rel="prev">Bounded Context</a>, Up: <a href="#Clan-Options" accesskey="u" rel="up">Clan Options</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="No-Loop-Context-_002dnoloopctxt"></span><h4 class="subsection">2.5.8 No Loop Context <code>-noloopctxt</code></h4>
+
+<p><code>-noloopctxt</code>: this option asks Clan to avoid generating
+additional constraints to ensure the initial values of the loop
+iterators respect the loop conditions. This option allows to
+generate simpler iteration domains, however it should be
+used with care. For instance without this option, a loop such
+as <code>for (i = 0; i &gt; 2; i++)</code> cannot be detected as an
+empty loop.
+</p>
+<hr>
+<span id="No-Domain-Simplify"></span><div class="header">
+<p>
+Next: <a href="#Extbody" accesskey="n" rel="next">Extbody</a>, Previous: <a href="#No-Loop-Context" accesskey="p" rel="prev">No Loop Context</a>, Up: <a href="#Clan-Options" accesskey="u" rel="up">Clan Options</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="No-Domain-Simplify-_002dnosimplify"></span><h4 class="subsection">2.5.9 No Domain Simplify <code>-nosimplify</code></h4>
+
+<p><code>-nosimplify</code>: this option asks Clan to avoid trying to
+simplify the iteration domains. Clan is not linked to a polyhedral
+library, hence it is just able to remove trivially redundant
+constraints and union parts. However, for debugging or time
+saving reason, this step can be disabled using this option.
+</p>
+<hr>
+<span id="Extbody"></span><div class="header">
+<p>
+Next: <a href="#Help" accesskey="n" rel="next">Help</a>, Previous: <a href="#No-Domain-Simplify" accesskey="p" rel="prev">No Domain Simplify</a>, Up: <a href="#Clan-Options" accesskey="u" rel="up">Clan Options</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Extbody-_002dextbody"></span><h4 class="subsection">2.5.10 Extbody <code>-extbody</code></h4>
+
+<p><code>-extbody</code>: this option asks Clan to use the extbody extension
+(see OpenScop&rsquo;s documentation) instead of the basic body for
+each statement.
+</p>
+<hr>
+<span id="Help"></span><div class="header">
+<p>
+Next: <a href="#Version" accesskey="n" rel="next">Version</a>, Previous: <a href="#Extbody" accesskey="p" rel="prev">Extbody</a>, Up: <a href="#Clan-Options" accesskey="u" rel="up">Clan Options</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Help-_002d_002dhelp-or-_002dh"></span><h4 class="subsection">2.5.11 Help <code>--help</code> or <code>-h</code></h4>
+
+<p><code>--help</code> or <code>-h</code>: this option asks Clan to print a short help.
+</p>
+<hr>
+<span id="Version"></span><div class="header">
+<p>
+Previous: <a href="#Help" accesskey="p" rel="prev">Help</a>, Up: <a href="#Clan-Options" accesskey="u" rel="up">Clan Options</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Version-_002d_002dversion-or-_002dv"></span><h4 class="subsection">2.5.12 Version <code>--version</code> or <code>-v</code></h4>
+
+<p><code>--version</code> or <code>-v</code>: this option asks Clan to print some
+     release and version informations.
+</p>
+
+<hr>
+<span id="Clan-Library"></span><div class="header">
+<p>
+Next: <a href="#Installing" accesskey="n" rel="next">Installing</a>, Previous: <a href="#Clan-Software" accesskey="p" rel="prev">Clan Software</a>, Up: <a href="#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Using-the-Clan-Library"></span><h2 class="chapter">3 Using the Clan Library</h2>
+<p>The Clan Library was implemented to allow the user to call Clan
+directly from his programs, without file accesses or system calls. The
+user only needs to link his programs with C libraries. The Clan
+library mainly provides one function (<code>clan_scop_extract</code>)
+which takes as input the source code file to process with some options,
+and returns the data structure corresponding
+to the SCoP (an <code>osl_scop_t</code> structure from the OpenScop Library
+Clan depends on) which contains the polyhedral representation of the SCoP.
+Some other functions are provided for convenience reasons.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="#Clan-Data-Structures" accesskey="1">Clan Data Structures</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Clan-Functions" accesskey="2">Clan Functions</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Example-of-Library-Use" accesskey="3">Example of Library Use</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+
+<hr>
+<span id="Clan-Data-Structures"></span><div class="header">
+<p>
+Next: <a href="#Clan-Functions" accesskey="n" rel="next">Clan Functions</a>, Up: <a href="#Clan-Library" accesskey="u" rel="up">Clan Library</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Clan-Data-Structures-Description"></span><h3 class="section">3.1 Clan Data Structures Description</h3>
+<p>In this section, we describe the data structures relevant for an user
+to use Clan as a library.  As this is not a developer&rsquo;s
+guide, data structure devoted to internal use as well as internal use
+fields are not described here.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="#clan_005foptions_005ft" accesskey="1">clan_options_t</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+<hr>
+<span id="clan_005foptions_005ft"></span><div class="header">
+<p>
+Up: <a href="#Clan-Data-Structures" accesskey="u" rel="up">Clan Data Structures</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="clan_005foptions_005ft-1"></span><h4 class="subsection">3.1.1 clan_options_t</h4>
+
+<div class="example">
+<pre class="example">struct clan_options {
+  char * name ;   /* Name of the input file */
+  int castle;     /* 1 to print the Clan Castle, 0 otherwise */
+  int structure;  /* 1 to dump the SCoP structure, 0 otherwise */
+  int autoscop;   /* 1 to extract SCoPs automatically, 0 otherwise */
+  int autopragma; /* 1 to insert SCoP pragmas in the code, 0 otherwise */
+  int inputscop;  /* 1 to read an OpenScop file, 0 for a source code */
+  int precision;  /* 0 for GMP, 32 for 32 bits, 64 for 64 bits */
+  int bounded_context; /* 1 to set all parameters to &gt;= -1, 0 otherwise */
+};
+typedef struct clan_options   clan_options_t;
+typedef struct clan_options * clan_options_p;
+</pre></div>
+
+<p>The <code>clan_options_t</code> structure contains all the possible
+options to rule Clan&rsquo;s behaviour (see <a href="#Calling-Clan">Calling Clan</a>).  
+The default values for the various fields set by the
+<code>clan_options_malloc()</code> function
+(see <a href="#Allocation-and-Initialization-Functions">Allocation and Initialization Functions</a>) are the following:
+</p>
+<ul>
+<li> <code>name</code>: NULL.
+</li><li> <code>castle</code>: 1 (do print the castle).
+</li><li> <code>structure</code>: 0 (do not dump the internal data structure).
+</li><li> <code>autoscop</code>: 0 (automatic SCoP extraction disabled).
+</li><li> <code>autopragma</code>: 0 (automatic pragma insertion disabled).
+</li><li> <code>inputscop</code>: 0 (read a source file by default).
+</li><li> <code>precision</code>: 64 (use 64 bits precision by default).
+</li><li> <code>bounded_context</code>: 0 (ubounded parameters by default).
+</li></ul>
+
+<hr>
+<span id="Clan-Functions"></span><div class="header">
+<p>
+Next: <a href="#Example-of-Library-Use" accesskey="n" rel="next">Example of Library Use</a>, Previous: <a href="#Clan-Data-Structures" accesskey="p" rel="prev">Clan Data Structures</a>, Up: <a href="#Clan-Library" accesskey="u" rel="up">Clan Library</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Clan-Functions-Description"></span><h3 class="section">3.2 Clan Functions Description</h3>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="#clan_005fscop_005fextract" accesskey="1">clan_scop_extract</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#clan_005fscop_005finsert_005fpragmas" accesskey="2">clan_scop_insert_pragmas</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#clan_005fscop_005fprint" accesskey="3">clan_scop_print</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Allocation-and-Initialization-Functions" accesskey="4">Allocation and Initialization Functions</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Memory-Deallocation-Functions" accesskey="5">Memory Deallocation Functions</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Printing-Functions" accesskey="6">Printing Functions</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+
+<hr>
+<span id="clan_005fscop_005fextract"></span><div class="header">
+<p>
+Next: <a href="#clan_005fscop_005finsert_005fpragmas" accesskey="n" rel="next">clan_scop_insert_pragmas</a>, Up: <a href="#Clan-Functions" accesskey="u" rel="up">Clan Functions</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="clan_005fscop_005fextract-1"></span><h4 class="subsection">3.2.1 clan_scop_extract</h4>
+<div class="example">
+<pre class="example">osl_scop_p clan_scop_extract(FILE * input, clan_options_p options);
+</pre></div>
+
+<p>The <code>clan_scop_extract</code> function extracts the polyhedral
+representation of a SCoP in the file provided thanks to the <code>input</code>
+pointer (the file, possibly <code>stdin</code>, has to be open for reading),
+according to some options
+provided thanks to the pointer <code>options</code> to a <code>clan_options_t</code>
+data structure (see <a href="#clan_005foptions_005ft">clan_options_t</a>). It returns a pointer to the
+extracted SCoP, translated into
+an <code>osl_scop_t</code> data structure (see <a href="#Bas12">Bas12</a>).
+</p>
+<hr>
+<span id="clan_005fscop_005finsert_005fpragmas"></span><div class="header">
+<p>
+Next: <a href="#clan_005fscop_005fprint" accesskey="n" rel="next">clan_scop_print</a>, Previous: <a href="#clan_005fscop_005fextract" accesskey="p" rel="prev">clan_scop_extract</a>, Up: <a href="#Clan-Functions" accesskey="u" rel="up">Clan Functions</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="clan_005fscop_005finsert_005fpragmas-1"></span><h4 class="subsection">3.2.2 clan_scop_insert_pragmas</h4>
+<div class="example">
+<pre class="example">void clan_scop_insert_pragmas(osl_scop_p scop, char* file, int test);
+</pre></div>
+
+<p>The <code>clan_scop_insert_pragmas</code> function inserts SCoP
+pragmas (<code>#pragma scop</code> and <code>#pragma endscop</code>) in the file
+named <code>file</code> around the SCoPs described in the <code>scop</code> list,
+except if they are already surrounded with such pragmas. The boolean
+<code>test</code>, when set to 1, allows to only test the function and to
+generate a temporary file (the name of the file is in the
+<code>CLAN_AUTOPRAGMA</code> file) instead of modifying <code>file</code>.
+</p>
+<hr>
+<span id="clan_005fscop_005fprint"></span><div class="header">
+<p>
+Next: <a href="#Allocation-and-Initialization-Functions" accesskey="n" rel="next">Allocation and Initialization Functions</a>, Previous: <a href="#clan_005fscop_005finsert_005fpragmas" accesskey="p" rel="prev">clan_scop_insert_pragmas</a>, Up: <a href="#Clan-Functions" accesskey="u" rel="up">Clan Functions</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="clan_005fscop_005fprint-1"></span><h4 class="subsection">3.2.3 clan_scop_print</h4>
+<div class="example">
+<pre class="example">void clan_scop_print (
+  FILE * output,
+  osl_scop_p scop,
+  clan_options_p options
+);
+</pre></div>
+
+<p>The function <code>clan_scop_print</code> is a pretty printer for
+<code>osl_scop_t</code> structures. It dumps the <code>scop</code> informations in
+OpenScop format (see <a href="#Bas12">Bas12</a>) in the file provided thanks to
+the pointer <code>output</code> (the file, possibly <code>stdout</code>, has to be open
+for writing), according to some options provided thanks to the pointer
+<code>options</code> to a <code>clan_options_t</code> data structure
+(see <a href="#clan_005foptions_005ft">clan_options_t</a>).
+</p>
+
+<hr>
+<span id="Allocation-and-Initialization-Functions"></span><div class="header">
+<p>
+Next: <a href="#Memory-Deallocation-Functions" accesskey="n" rel="next">Memory Deallocation Functions</a>, Previous: <a href="#clan_005fscop_005fprint" accesskey="p" rel="prev">clan_scop_print</a>, Up: <a href="#Clan-Functions" accesskey="u" rel="up">Clan Functions</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Allocation-and-Initialization-Functions-1"></span><h4 class="subsection">3.2.4 Allocation and Initialization Functions</h4>
+<div class="example">
+<pre class="example">clan_structure_p clan_structure_malloc();
+</pre></div>
+<p>Each Clan data structure has an allocation and initialization
+function as shown above, where <code>structure</code> has to
+be replaced by the name of the convenient structure (without &lsquo;<samp>clan</samp>&rsquo;
+prefix and &lsquo;<samp>_t</samp>&rsquo; suffix) for
+instance <code>clan_options_p clan_options_malloc();</code>. These functions return
+pointers to an allocated structure with fields set to convenient default
+values. <strong>Using those functions is mandatory</strong> to support internal
+management fields and to avoid upward compatibility problems if
+new fields appear.
+</p>
+
+<hr>
+<span id="Memory-Deallocation-Functions"></span><div class="header">
+<p>
+Next: <a href="#Printing-Functions" accesskey="n" rel="next">Printing Functions</a>, Previous: <a href="#Allocation-and-Initialization-Functions" accesskey="p" rel="prev">Allocation and Initialization Functions</a>, Up: <a href="#Clan-Functions" accesskey="u" rel="up">Clan Functions</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Memory-Deallocation-Functions-1"></span><h4 class="subsection">3.2.5 Memory Deallocation Functions</h4>
+<div class="example">
+<pre class="example">void clan_structure_free(clan_structure_p);
+</pre></div>
+<p>Each Clan data structure has a deallocation function as shown above,
+where <code>structure</code> have to
+be replaced by the name of the convenient structure (without &lsquo;<samp>clan</samp>&rsquo;
+prefix and &lsquo;<samp>_t</samp>&rsquo; suffix) for
+instance <code>void clan_options_free(clan_options_p);</code>. These functions
+free the allocated memory for the structure provided as input. They free
+memory recursively, i.e. they also free the allocated memory for the internal
+structures.
+<strong>Using those functions is mandatory</strong> to avoid memory leaks on internal
+management fields and to avoid upward compatibility problems if
+new fields appear.
+</p>
+
+<hr>
+<span id="Printing-Functions"></span><div class="header">
+<p>
+Previous: <a href="#Memory-Deallocation-Functions" accesskey="p" rel="prev">Memory Deallocation Functions</a>, Up: <a href="#Clan-Functions" accesskey="u" rel="up">Clan Functions</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Printing-Functions-1"></span><h4 class="subsection">3.2.6 Printing Functions</h4>
+<div class="example">
+<pre class="example">void clan_structure_print(FILE *, clan_structure_p) ;
+</pre></div>
+<p>Each Clan data structure has a printing function as shown above,
+where <code>structure</code> have to
+be replaced by the name of the convenient structure (without &lsquo;<samp>clan</samp>&rsquo;
+prefix and &lsquo;<samp>_t</samp>&rsquo; suffix) for
+instance <code>void clan_options_print(FILE *, clan_options_p);</code>. These functions
+print the pointed structure (and its fields recursively) to the file provided
+as input (the file, possibly <code>stdout</code>, has to be open
+for writing).
+</p>
+
+<hr>
+<span id="Example-of-Library-Use"></span><div class="header">
+<p>
+Previous: <a href="#Clan-Functions" accesskey="p" rel="prev">Clan Functions</a>, Up: <a href="#Clan-Library" accesskey="u" rel="up">Clan Library</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Example-of-Library-Use-1"></span><h3 class="section">3.3 Example of Library Use</h3>
+<p>Here is a basic example showing how it is possible to use the Clan library,
+assuming that a standard installation has been done (note that this includes
+installing the OpenScop Library, <code>osl</code>, see <a href="#Installing">Installing</a>).
+The following C program reads a source code input file on the standard input,
+then prints the solution on the standard output.
+Options are preselected to the default values of the Clan software.
+</p><div class="example">
+<pre class="example">/* example.c */
+# include &lt;stdio.h&gt;
+# include &lt;osl/osl.h&gt;
+# include &lt;clan/clan.h&gt;
+
+int main() {
+  osl_scop_p scop;
+  clan_options_p options;
+
+  /* Default option setting. */
+  options = clan_options_malloc() ;
+
+  /* Extraction of the SCoP. */
+  scop = clan_scop_extract(stdin, options);
+
+  /* Output of the OpenScop file. */
+  osl_scop_print(stdout, scop);
+
+  /* Save the planet. */
+  clan_options_free(options);
+  osl_scop_free(scop);
+
+  return 0;
+}
+</pre></div>
+
+<p>The compilation command could be:
+</p><div class="example">
+<pre class="example">gcc example.c -lclan -o example
+</pre></div>
+<p>A calling command with the input file test.c could be:
+</p><div class="example">
+<pre class="example">more test.c | ./example
+</pre></div>
+
+
+<hr>
+<span id="Installing"></span><div class="header">
+<p>
+Next: <a href="#Documentation" accesskey="n" rel="next">Documentation</a>, Previous: <a href="#Clan-Library" accesskey="p" rel="prev">Clan Library</a>, Up: <a href="#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Installing-Clan"></span><h2 class="chapter">4 Installing Clan</h2>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="#License" accesskey="1">License</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Requirements" accesskey="2">Requirements</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Basic-Installation" accesskey="3">Basic Installation</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Optional-Features" accesskey="4">Optional Features</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Uninstallation" accesskey="5">Uninstallation</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+<hr>
+<span id="License"></span><div class="header">
+<p>
+Next: <a href="#Requirements" accesskey="n" rel="next">Requirements</a>, Up: <a href="#Installing" accesskey="u" rel="up">Installing</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="License-1"></span><h3 class="section">4.1 License</h3>
+<p>First of all, it would be very kind to refer the following paper in any
+publication that result from the use of the Clan software or its library,
+see <a href="#Bas03">Bas03</a> (a bibtex entry is provided behind the title page of this
+manual, along with copyright notice).
+</p>
+<p>This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public License
+as published by the Free Software Foundation,
+either version 3 of the  License, or (at your option) any later version.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+<code>http://www.gnu.org/copyleft/lgpl.html</code>
+</p>
+
+<hr>
+<span id="Requirements"></span><div class="header">
+<p>
+Next: <a href="#Basic-Installation" accesskey="n" rel="next">Basic Installation</a>, Previous: <a href="#License" accesskey="p" rel="prev">License</a>, Up: <a href="#Installing" accesskey="u" rel="up">Installing</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Requirements-1"></span><h3 class="section">4.2 Requirements</h3>
+
+
+<p>Clan relies on the OpenScop Library, or <code>osl</code> for everything related to
+the OpenScop format. For convenience, an embedded version of osl is
+bundled along with Clan so it is not necessary for the user to do any
+additional step to install osl. However it is obviously possible to use
+an already installed version of osl as long as it is recent enough for
+Clan needs.
+</p>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="#OpenScop-Library" accesskey="1">OpenScop Library</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+<hr>
+<span id="OpenScop-Library"></span><div class="header">
+<p>
+Up: <a href="#Requirements" accesskey="u" rel="up">Requirements</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="OpenScop-Library-_0028bundled_0029"></span><h4 class="subsection">4.2.1 OpenScop Library (bundled)</h4>
+
+<p>OpenScop is a simple, polyhedral-library independent format to ease
+polyhedral representation transfers between the various elements of
+a polyhedral framework. The OpenScop Library, or <code>osl</code>, is an
+implementation of the OpenScop standard with utility functions. It can
+be freely downloaded from <a href="http://www.lri.fr/~bastoul">http://www.lri.fr/~bastoul</a>. Since
+a convenient version of osl is bundled in Clan, it is not necessary to
+install it. However a user may wish to use a separate installation of
+osl. The user can compile it by typing the following commands on the
+osl root directory:
+</p>
+<ul>
+<li> <code>./configure</code>
+</li><li> <code>make</code>
+</li><li> And as root: <code>make install</code>
+</li></ul>
+
+<p>The osl default installation is <code>/usr/local</code>. This directory may
+not be inside your library path. To fix the problem, the user should set
+</p><div class="example">
+<pre class="example">export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+</pre></div>
+<p>if your shell is, e.g., bash or
+</p><div class="example">
+<pre class="example">setenv LD_LIBRARY_PATH $LD_LIBRARY_PATH:/usr/local/lib
+</pre></div>
+<p>if your shell is, e.g., tcsh. Add the line to your .bashrc or .tcshrc (or
+whatever convenient file) to make this change permanent. Another solution
+is to ask osl to install in the standard path by using the prefix
+option of the configure script:
+&lsquo;<samp>./configure --prefix=/usr</samp>&rsquo;.
+</p>
+<p>Clan has to be built using the osl library by specifying the convenient
+configure script options (see <a href="#Optional-Features">Optional Features</a>).
+</p>
+<hr>
+<span id="Basic-Installation"></span><div class="header">
+<p>
+Next: <a href="#Optional-Features" accesskey="n" rel="next">Optional Features</a>, Previous: <a href="#Requirements" accesskey="p" rel="prev">Requirements</a>, Up: <a href="#Installing" accesskey="u" rel="up">Installing</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Clan-Basic-Installation"></span><h3 class="section">4.3 Clan Basic Installation</h3>
+
+<p>Once downloaded and unpacked
+(e.g. using the &lsquo;<samp>tar -zxvf clan-0.8.1.tar.gz</samp>&rsquo; command),
+you can compile Clan by typing the following commands on the Clan&rsquo;s root
+directory:
+</p>
+<ul>
+<li> <code>./configure</code>
+</li><li> <code>make</code>
+</li><li> And as root: <code>make install</code>
+</li></ul>
+
+<p>The program binaries and object files can be removed from the
+source code directory by typing <code>make clean</code>. To also remove the
+files that the <code>configure</code> script created (so you can compile the
+package for a different kind of computer) type <code>make distclean</code>.
+</p>
+<hr>
+<span id="Optional-Features"></span><div class="header">
+<p>
+Next: <a href="#Uninstallation" accesskey="n" rel="next">Uninstallation</a>, Previous: <a href="#Basic-Installation" accesskey="p" rel="prev">Basic Installation</a>, Up: <a href="#Installing" accesskey="u" rel="up">Installing</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Optional-Features-1"></span><h3 class="section">4.4 Optional Features</h3>
+<p>The <code>configure</code> shell script attempts to guess correct values for
+various system-dependent variables and user options used during compilation.
+It uses those values to create the <code>Makefile</code>. Various user options
+are provided by the Clan&rsquo;s configure script. They are summarized in the
+following list and may be printed by typing <code>./configure --help</code> in the
+Clan top-level directory.
+</p>
+<ul>
+<li> By default, the installation directory is <code>/usr/local</code>:
+<code>make install</code> will install the package&rsquo;s files in
+<code>/usr/local/bin</code>, <code>/usr/local/lib</code> and <code>/usr/local/include</code>.
+The user can specify an installation prefix other than <code>/usr/local</code> by
+giving <code>configure</code> the option <code>--prefix=PATH</code>.
+
+</li><li> By default,
+<code>configure</code> will use the bundled OpenScop Library (osl).
+Using the <code>--with-osl</code> option of <code>configure</code>
+the user can specify that <code>no</code> osl,
+a previously installed (<code>system</code>) osl, a <code>bundled</code> osl, or a
+<code>build</code> osl should be used.
+In the latter case, the user should also specify the build location
+using <code>--with-osl-builddir=PATH</code>.
+In case of an installed osl,
+the installation location can be specified using the
+<code>--with-osl-prefix=PATH</code> and
+<code>--with-osl-exec-prefix=PATH</code> options of <code>configure</code>.
+</li></ul>
+
+<hr>
+<span id="Uninstallation"></span><div class="header">
+<p>
+Previous: <a href="#Optional-Features" accesskey="p" rel="prev">Optional Features</a>, Up: <a href="#Installing" accesskey="u" rel="up">Installing</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Uninstallation-1"></span><h3 class="section">4.5 Uninstallation</h3>
+<p>The user can easily remove the Clan software and library from his system
+by typing (as root if necessary) from the Clan top-level directory
+<code>make uninstall</code>.
+</p>
+<hr>
+<span id="Documentation"></span><div class="header">
+<p>
+Next: <a href="#Development" accesskey="n" rel="next">Development</a>, Previous: <a href="#Installing" accesskey="p" rel="prev">Installing</a>, Up: <a href="#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Documentation-1"></span><h2 class="chapter">5 Documentation</h2>
+<p>The Clan distribution provides several documentation sources. First, the
+source code itself is as documented as possible. The code comments use a
+Doxygen-compatible presentation (something similar to what JavaDoc does for
+JAVA). The user may install Doxygen
+(see <code>http://www.stack.nl/~dimitri/doxygen</code>) to automatically
+generate a technical documentation by typing <code>make doc</code> or
+<code>doxygen ./autoconf/Doxyfile</code> at the Clan top-level directory after
+running the configure script (see <a href="#Installing">Installing</a>). Doxygen will generate
+documentation sources (in HTML, LaTeX and man) in the <code>doc/source</code>
+directory of the Clan distribution.
+</p>
+<p>The Texinfo sources of the present document are also provided in the <code>doc</code>
+directory. You can build it in PDF format
+(by typing <code>texi2pdf clan.texi</code> or <code>make pdf</code>) or HTML format
+(by typing <code>makeinfo --html clan.texi</code>, using <code>--no-split</code>
+option to generate a single HTML file) or info format
+(by typing <code>makeinfo clan.texi</code>).
+</p>
+<hr>
+<span id="Development"></span><div class="header">
+<p>
+Next: <a href="#References" accesskey="n" rel="next">References</a>, Previous: <a href="#Documentation" accesskey="p" rel="prev">Documentation</a>, Up: <a href="#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Development-1"></span><h2 class="chapter">6 Development</h2>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="#Copyright-Issue" accesskey="1">Copyright Issue</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Repository" accesskey="2">Repository</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#Coding-Style" accesskey="3">Coding Style</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+<hr>
+<span id="Copyright-Issue"></span><div class="header">
+<p>
+Next: <a href="#Repository" accesskey="n" rel="next">Repository</a>, Up: <a href="#Development" accesskey="u" rel="up">Development</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Copyright-Issue-1"></span><h3 class="section">6.1 Copyright Issue</h3>
+
+<p>Clan is an Open Source project and you should feel free to contribute by adding
+functionalities, correcting bugs or improving documentation. However, for
+painful administrative reasons, the copyright should not be impacted by your work.
+Hence, if you are doing a significant contribution to
+the main part, Clan&rsquo;s maintainer may ask you for an agreement
+about this copyright. If you plan to do such a significant contribution, it
+may be wise to discuss this issue with the maintainer first.
+</p>
+<hr>
+<span id="Repository"></span><div class="header">
+<p>
+Next: <a href="#Coding-Style" accesskey="n" rel="next">Coding Style</a>, Previous: <a href="#Copyright-Issue" accesskey="p" rel="prev">Copyright Issue</a>, Up: <a href="#Development" accesskey="u" rel="up">Development</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Repository-1"></span><h3 class="section">6.2 Repository</h3>
+
+<p>The main repository of Clan is
+<a href="http://repo.or.cz/w/clan.git">http://repo.or.cz/w/clan.git</a>. Developers may ask Clan&rsquo;s
+maintainer to open them a write access to this repository. Only the maintainer
+should ever change the <code>master</code> branch. Developers should work on their
+own branches. To avoid any problem developers should use the <em>fork</em>
+functionality of the repository.
+</p>
+<hr>
+<span id="Coding-Style"></span><div class="header">
+<p>
+Previous: <a href="#Repository" accesskey="p" rel="prev">Repository</a>, Up: <a href="#Development" accesskey="u" rel="up">Development</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="Coding-Style-1"></span><h3 class="section">6.3 Coding Style</h3>
+
+<p>Clan is written in C using an object oriented style. Each
+important data structure (e.g., <code>struct foo</code>) has its own header file
+(<code>include/clan/foo.h</code>) where lies the definition of
+the data structure, the two typedefs for the data structure (one for the
+structure, <code>clan_foo_t</code>, and one for a pointer
+to the structure, <code>clan_foo_p</code>), the prototypes of the various
+functions related to this data structure, all named using the
+prefix &quot;<code>clan_foo_</code>&quot;. The source code of the functions is provided in a
+separated C file (<code>source/foo.c</code>).
+</p>  
+<p>Utility functions independent from the main data structures may be placed in
+separate source files (e.g., definition in <code>include/clan/util.h</code>
+and code in <code>source/util.c</code>). Tool-wide preprocessor directives are
+placed in <code>include/clan/macros.h</code>, macros are prefixed with
+&quot;<code>CLAN_</code>&quot;.
+</p>
+<p>The core code itself has to be written according to the Google C++ Coding Style:
+<a href="http://google-styleguide.googlecode.com/svn/trunk/cppguide.xml">http://google-styleguide.googlecode.com/svn/trunk/cppguide.xml</a> (for
+what can apply to C), plus the naming conventions discussed above with
+highest priority.
+</p>
+
+<hr>
+<span id="References"></span><div class="header">
+<p>
+Previous: <a href="#Development" accesskey="p" rel="prev">Development</a>, Up: <a href="#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<span id="References-1"></span><h2 class="chapter">7 References</h2>
+
+<ul>
+<li> <span id="Bas03a"></span>[Bas03a] C. Bastoul, P. Feautrier. Improving data locality
+by chunking. CC&rsquo;12 International Conference on Compiler Construction,
+LNCS 2622, pages 320-335, Warsaw, april 2003.
+
+</li><li> <span id="Bas03"></span>[Bas03] C. Bastoul and A. Cohen and S. Girbal and
+S. Sharma and O. Temam. Putting Polyhedral Loop Transformations to
+Work, LCPC&rsquo;16 International Workshop on Languages and
+Compilers for Parallel Computers, LNCS 2958, pages 209&ndash;225,
+College Station, Texas, october 2003.
+
+</li><li> <span id="Bas12"></span>[Bas12] C. Bastoul. A Specification and a Library for Data 
+Exchange in Polyhedral Compilation Tools. Technical Report,
+Paris-Sud University, France, September 2012.
+
+</li></ul>
+
+
+
+<hr>
+
+
+
+</body>
+</html>
