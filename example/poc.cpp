@@ -1,8 +1,30 @@
-/* poc.c A complete C to polyhedra to C compiler */
-#include <stdlib.h>
+/* poc.cpp A complete C to polyhedra to C compiler */
+
+#include <iostream>
+#include <vector>
+
+#include <cstdlib>
 #include <osl/osl.h>
 #include <clan/clan.h>
 #include <cloog/cloog.h>
+
+// int split (osl_scop_p scop, std::vector<int> statementID, unsigned int depth);
+// int reorder(osl_scop_p scop, std::vector<int> statementID, std::vector<int> neworder) ;
+// int interchange(osl_scop_p scop,
+//                 std::vector<int> statementID,
+//                 unsigned int depth_1, unsigned int depth_2,
+//                 int pretty) ;
+// int fuse(osl_scop_p scop, std::vector<int> statementID) ;
+// int skew(osl_scop_p scop,
+//          std::vector<int> statementID,
+//          unsigned int depth,
+//          unsigned int depth_other,
+//          int coeff) ;
+// int tile(osl_scop_p scop,
+//          std::vector<int> statementID, unsigned int depth, unsigned int depth_outer,
+//          unsigned int size) ;
+// int unroll(osl_scop_p scop, std::vector<int> statementID, unsigned int factor) ;
+
 /* Use the Clan library to convert a SCoP from C to OpenScop */
 osl_scop_p read_scop_from_c(FILE* input, char* input_name) {
     clan_options_p clanoptions;
@@ -49,7 +71,7 @@ int main(int argc, char* argv[]) {
     }
     scop = read_scop_from_c(input, argv[1]);
     osl_scop_print(stdout, scop);
-    // Do the loop transformations on loop here
+    // Do the loop transformations on SCoP here
     print_scop_to_c(stdout, scop);
     osl_scop_free(scop);
     fclose(input);
