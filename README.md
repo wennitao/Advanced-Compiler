@@ -11,64 +11,97 @@ Polyhedral format: SCoP (Static Control Part) https://github.com/periscop/opensc
 
 Reference: clay https://github.com/periscop/clay
 
+## Implementation
+
 ```C
-Types:
+/**
+ * split function:
+ * Split the loop into two parts at the depth-th level from the statement
+ * scop: the SCoP to be transformed
+ * statementID: the statement scattering ID on AST
+ * depth
+ * return status
+ */
+int split (osl_scop_p scop, std::vector<int> statementID, unsigned int depth);
 
-  array:  [n1, n2, ...]
-          array of integer
+/**
+ * reorder function:
+ * Reorders the statements in the loop
+ * scop: the SCoP to be transformed
+ * statementID: the statement scattering ID on AST
+ * neworder: the new order of the statements
+ * return status
+ */
+int reorder(osl_scop_p scop, std::vector<int> statementID, std::vector<int> neworder) ;
 
-  bool:   1 | 0 | true | false
+/**
+ * interchange function:
+ * On each statement which belongs to the node, the loops that match the
+ * depth_1-th and the depth_2 are interchanged
+ * given the inner loop
+ * scop: the SCoP to be transformed
+ * statementID: the statement scattering ID on AST
+ * depth_1, depth_2: >= 1
+ * pretty: 1 or 0 : whether update the scatnames
+ * return status
+ */
+int interchange(osl_scop_p scop,
+                std::vector<int> statementID,
+                unsigned int depth_1, unsigned int depth_2,
+                int pretty)
 
-  string: "blah"
+/**
+ * fuse function:
+ * Fuse loop with the first loop after
+ * scop: the SCoP to be transformed
+ * statementID: the statement scattering ID on AST
+ * return status
+ */
+int fuse(osl_scop_p scop, std::vector<int> statementID)
 
-  list:   {n1, n2, ... | n3, n4, ... | ...}
-          list of arrays
+/**
+ * skew function
+ * Transform the iteration domain so that the loop at depth depends on the
+ * loop iterator at depth_other: in all occurrences, the loop iterator i
+ * of the former loop is replaced by (i + coeff*j) where j is the loop iterator
+ * of the latter loop.  Adjusts the loop boundaries accordingly.
+ * Skewing the loop by its own iterator, i.e. depth == depth_outer, is invalid
+ * scop: the SCoP to be transformed
+ * statementID: the statement scattering ID on AST
+ * depth: 1-based depth of the output loop to modify
+ * depth_other: 1-based depth of the loop iterator to add
+ * coeff: the coefficient to multiply the dimension by
+ * return status
+ */
+int skew(osl_scop_p scop,
+         std::vector<int> statementID,
+         unsigned int depth,
+         unsigned int depth_other,
+         int coeff)
 
-  multi:  any object/variable
+/**
+ * tile function:
+ * Do tiling on the loop at depth with size, the outer loop is at depth_outer
+ * scop: the SCoP to be transformed
+ * statementID: the statement scattering ID on AST
+ * depth: tiling on loop at depth
+ * depth_outer: outer loop depth
+ * size: tiling size
+ * return status
+*/
+int tile(osl_scop_p scop,
+         std::vector<int> statementID, unsigned int depth, unsigned int depth_outer,
+         unsigned int size)
 
-  beta_loop    The ident corresponds to a loop
-  beta_inner   In the interchange, it corresponds to the inner loop
-               (or statement)
-
-Variables: For the moment only variables a-z are available.
-
-Available functions:
-
-  void split(array beta, uint depth)
-  void reorder(array beta_loop, array neworder)
-  void interchange(array beta_inner, uint depth_1, uint depth_2, bool pretty)
-  void reverse(ident, uint depth)
-  void fuse(array beta_loop)
-  void skew(array beta, uint depth, uint depth_other, int coeff)
-  void iss(array beta_loop, list inequation { ((output,) params,)) const }
-  void stripmine(array beta, uint depth, uint size)
-  void unroll(array beta_loop, uint factor)
-  void unroll_noepilog(array beta_loop, uint factor)
-  void tile(array beta, uint depth, uint depth_outer, uint size)
-  void shift(array beta, uint depth, array params, int constant)
-  void peel(array beta_loop,  list inequation { (params,) const })
-  void context(array vector)
-  void dimreorder(array beta, uint #access, array neworder)
-  void dimprivatize(array beta, uint #access, uint depth)
-  void dimcontract(array beta, uint #access, uint depth)
-  int add_array(string name)
-  array get_beta_loop(uint n >= 0)
-  array get_beta_stmt(uint n >= 0)
-  array get_beta_loop_by_name(string iterator)
-  int get_array_id(string name)
-  void print(multi)
-  void replace_array(uint last_id, uint new_id)
-  void datacopy(uint id_copy, uint id_orig, array beta_insert,
-                bool before, array beta_get_domain)
-  void break()
-  void block(array beta_stmt1, beta_stmt2)
-  void grain(array beta, int depth, int factor)
-  void densify(array beta, int depth)
-  void reshape(array beta, int depth, int iterator, int amount)
-  void collapse(array beta_loop)
-  void linearize(array beta_loop, int depth)
-  void embed(array beta_stmt)
-  void unembed(array beta_stmt)
+// BONUS
+/** unroll function
+ * Unroll a loop
+ * scop: the SCoP to be transformed
+ * statementID: the statement scattering ID on AST
+ * factor: unroll factor
+ * return status
+ */
+int unroll(osl_scop_p scop, std::vector<int> statementID, unsigned int factor)
 ```
 
 ### Example 
@@ -76,19 +109,426 @@ Available functions:
 ```C
 #pragma scop
 /* Clay
-block([0,0], [1,0]);
+   fuse([1]);
 */
-
-for (i = 0 ; i <= N ; i++) 
-  a[i] = 0;
-
-for (i = 0 ; i <= N ; i++)
+a = 0;
+for(i = 0 ; i <= N ; i++) {
   b[i] = 0;
-
+  c[i] = 0;
+  d[i] = 0;
+}
+for(i = 0 ; i <= N ; i++) {
+  t[i] = 0;
+  s[i] = 0;
+}
+f = 0;
 #pragma endscop
 ```
 
 Use clan to extract polyhedral format from C code: 
+```
+# [File generated by the OpenScop Library 0.8.4]
+
+<OpenScop>
+
+# =============================================== Global
+# Language
+C
+
+# Context
+CONTEXT
+0 3 0 0 0 1
+
+# Parameters are provided
+1
+<strings>
+N
+</strings>
+
+# Number of statements
+7
+
+# =============================================== Statement 1
+# Number of relations describing the statement:
+3
+
+# ----------------------------------------------  1.1 Domain
+DOMAIN
+0 3 0 0 0 1
+
+# ----------------------------------------------  1.2 Scattering
+SCATTERING
+1 4 1 0 0 1
+# e/i| c1 |  N |  1  
+   0   -1    0    0    ## c1 == 0
+
+# ----------------------------------------------  1.3 Access
+WRITE
+1 4 1 0 0 1
+# e/i| Arr|  N |  1  
+   0   -1    0    1    ## Arr == a
+
+# ----------------------------------------------  1.4 Statement Extensions
+# Number of Statement Extensions
+2
+<body>
+# Number of original iterators
+0
+# Statement body expression
+a = 0;
+</body>
+
+<extbody>
+# Number of accesses
+1
+# Access coordinates (start/length)
+0 1
+# Number of original iterators
+0
+# Statement body expression
+a = 0;
+</extbody>
+
+# =============================================== Statement 2
+# Number of relations describing the statement:
+3
+
+# ----------------------------------------------  2.1 Domain
+DOMAIN
+3 4 1 0 0 1
+# e/i|  i |  N |  1  
+   1    1    0    0    ## i >= 0
+   1   -1    1    0    ## -i+N >= 0
+   1    0    1    0    ## N >= 0
+
+# ----------------------------------------------  2.2 Scattering
+SCATTERING
+3 7 3 1 0 1
+# e/i| c1   c2   c3 |  i |  N |  1  
+   0   -1    0    0    0    0    1    ## c1 == 1
+   0    0   -1    0    1    0    0    ## c2 == i
+   0    0    0   -1    0    0    0    ## c3 == 0
+
+# ----------------------------------------------  2.3 Access
+WRITE
+2 6 2 1 0 1
+# e/i| Arr  [1]|  i |  N |  1  
+   0   -1    0    0    0    4    ## Arr == b
+   0    0   -1    1    0    0    ## [1] == i
+
+# ----------------------------------------------  2.4 Statement Extensions
+# Number of Statement Extensions
+2
+<body>
+# Number of original iterators
+1
+# List of original iterators
+i
+# Statement body expression
+b[i] = 0;
+</body>
+
+<extbody>
+# Number of accesses
+1
+# Access coordinates (start/length)
+0 4
+# Number of original iterators
+1
+# List of original iterators
+i
+# Statement body expression
+b[i] = 0;
+</extbody>
+
+# =============================================== Statement 3
+# Number of relations describing the statement:
+3
+
+# ----------------------------------------------  3.1 Domain
+DOMAIN
+3 4 1 0 0 1
+# e/i|  i |  N |  1  
+   1    1    0    0    ## i >= 0
+   1   -1    1    0    ## -i+N >= 0
+   1    0    1    0    ## N >= 0
+
+# ----------------------------------------------  3.2 Scattering
+SCATTERING
+3 7 3 1 0 1
+# e/i| c1   c2   c3 |  i |  N |  1  
+   0   -1    0    0    0    0    1    ## c1 == 1
+   0    0   -1    0    1    0    0    ## c2 == i
+   0    0    0   -1    0    0    1    ## c3 == 1
+
+# ----------------------------------------------  3.3 Access
+WRITE
+2 6 2 1 0 1
+# e/i| Arr  [1]|  i |  N |  1  
+   0   -1    0    0    0    5    ## Arr == c
+   0    0   -1    1    0    0    ## [1] == i
+
+# ----------------------------------------------  3.4 Statement Extensions
+# Number of Statement Extensions
+2
+<body>
+# Number of original iterators
+1
+# List of original iterators
+i
+# Statement body expression
+c[i] = 0;
+</body>
+
+<extbody>
+# Number of accesses
+1
+# Access coordinates (start/length)
+0 4
+# Number of original iterators
+1
+# List of original iterators
+i
+# Statement body expression
+c[i] = 0;
+</extbody>
+
+# =============================================== Statement 4
+# Number of relations describing the statement:
+3
+
+# ----------------------------------------------  4.1 Domain
+DOMAIN
+3 4 1 0 0 1
+# e/i|  i |  N |  1  
+   1    1    0    0    ## i >= 0
+   1   -1    1    0    ## -i+N >= 0
+   1    0    1    0    ## N >= 0
+
+# ----------------------------------------------  4.2 Scattering
+SCATTERING
+3 7 3 1 0 1
+# e/i| c1   c2   c3 |  i |  N |  1  
+   0   -1    0    0    0    0    1    ## c1 == 1
+   0    0   -1    0    1    0    0    ## c2 == i
+   0    0    0   -1    0    0    2    ## c3 == 2
+
+# ----------------------------------------------  4.3 Access
+WRITE
+2 6 2 1 0 1
+# e/i| Arr  [1]|  i |  N |  1  
+   0   -1    0    0    0    6    ## Arr == d
+   0    0   -1    1    0    0    ## [1] == i
+
+# ----------------------------------------------  4.4 Statement Extensions
+# Number of Statement Extensions
+2
+<body>
+# Number of original iterators
+1
+# List of original iterators
+i
+# Statement body expression
+d[i] = 0;
+</body>
+
+<extbody>
+# Number of accesses
+1
+# Access coordinates (start/length)
+0 4
+# Number of original iterators
+1
+# List of original iterators
+i
+# Statement body expression
+d[i] = 0;
+</extbody>
+
+# =============================================== Statement 5
+# Number of relations describing the statement:
+3
+
+# ----------------------------------------------  5.1 Domain
+DOMAIN
+3 4 1 0 0 1
+# e/i|  i |  N |  1  
+   1    1    0    0    ## i >= 0
+   1   -1    1    0    ## -i+N >= 0
+   1    0    1    0    ## N >= 0
+
+# ----------------------------------------------  5.2 Scattering
+SCATTERING
+3 7 3 1 0 1
+# e/i| c1   c2   c3 |  i |  N |  1  
+   0   -1    0    0    0    0    2    ## c1 == 2
+   0    0   -1    0    1    0    0    ## c2 == i
+   0    0    0   -1    0    0    0    ## c3 == 0
+
+# ----------------------------------------------  5.3 Access
+WRITE
+2 6 2 1 0 1
+# e/i| Arr  [1]|  i |  N |  1  
+   0   -1    0    0    0    7    ## Arr == t
+   0    0   -1    1    0    0    ## [1] == i
+
+# ----------------------------------------------  5.4 Statement Extensions
+# Number of Statement Extensions
+2
+<body>
+# Number of original iterators
+1
+# List of original iterators
+i
+# Statement body expression
+t[i] = 0;
+</body>
+
+<extbody>
+# Number of accesses
+1
+# Access coordinates (start/length)
+0 4
+# Number of original iterators
+1
+# List of original iterators
+i
+# Statement body expression
+t[i] = 0;
+</extbody>
+
+# =============================================== Statement 6
+# Number of relations describing the statement:
+3
+
+# ----------------------------------------------  6.1 Domain
+DOMAIN
+3 4 1 0 0 1
+# e/i|  i |  N |  1  
+   1    1    0    0    ## i >= 0
+   1   -1    1    0    ## -i+N >= 0
+   1    0    1    0    ## N >= 0
+
+# ----------------------------------------------  6.2 Scattering
+SCATTERING
+3 7 3 1 0 1
+# e/i| c1   c2   c3 |  i |  N |  1  
+   0   -1    0    0    0    0    2    ## c1 == 2
+   0    0   -1    0    1    0    0    ## c2 == i
+   0    0    0   -1    0    0    1    ## c3 == 1
+
+# ----------------------------------------------  6.3 Access
+WRITE
+2 6 2 1 0 1
+# e/i| Arr  [1]|  i |  N |  1  
+   0   -1    0    0    0    8    ## Arr == s
+   0    0   -1    1    0    0    ## [1] == i
+
+# ----------------------------------------------  6.4 Statement Extensions
+# Number of Statement Extensions
+2
+<body>
+# Number of original iterators
+1
+# List of original iterators
+i
+# Statement body expression
+s[i] = 0;
+</body>
+
+<extbody>
+# Number of accesses
+1
+# Access coordinates (start/length)
+0 4
+# Number of original iterators
+1
+# List of original iterators
+i
+# Statement body expression
+s[i] = 0;
+</extbody>
+
+# =============================================== Statement 7
+# Number of relations describing the statement:
+3
+
+# ----------------------------------------------  7.1 Domain
+DOMAIN
+0 3 0 0 0 1
+
+# ----------------------------------------------  7.2 Scattering
+SCATTERING
+1 4 1 0 0 1
+# e/i| c1 |  N |  1  
+   0   -1    0    3    ## c1 == 3
+
+# ----------------------------------------------  7.3 Access
+WRITE
+1 4 1 0 0 1
+# e/i| Arr|  N |  1  
+   0   -1    0    9    ## Arr == f
+
+# ----------------------------------------------  7.4 Statement Extensions
+# Number of Statement Extensions
+2
+<body>
+# Number of original iterators
+0
+# Statement body expression
+f = 0;
+</body>
+
+<extbody>
+# Number of accesses
+1
+# Access coordinates (start/length)
+0 1
+# Number of original iterators
+0
+# Statement body expression
+f = 0;
+</extbody>
+
+# =============================================== Extensions
+<scatnames>
+b0 i b1
+</scatnames>
+
+<arrays>
+# Number of arrays
+9
+# Mapping array-identifiers/array-names
+1 a
+2 i
+3 N
+4 b
+5 c
+6 d
+7 t
+8 s
+9 f
+</arrays>
+
+<coordinates>
+# File name
+./unitary/fuse.c
+# Starting line and column
+2 0
+# Ending line and column
+16 0
+# Indentation
+0
+</coordinates>
+
+<clay>
+   fuse([1]);
+</clay>
+
+</OpenScop>
+```
+
+After loop fusion: 
 ```
 # [File generated by the OpenScop Library 0.9.2]
 
@@ -109,7 +549,7 @@ N
 </strings>
 
 # Number of statements
-2
+7
 
 # =============================================== Statement 1
 # Number of relations describing the statement:
@@ -117,37 +557,28 @@ N
 
 # ----------------------------------------------  1.1 Domain
 DOMAIN
-3 4 1 0 0 1
-# e/i|  i |  N |  1  
-   1    1    0    0    ## i >= 0
-   1   -1    1    0    ## -i+N >= 0
-   1    0    1    0    ## N >= 0
+0 3 0 0 0 1
 
 # ----------------------------------------------  1.2 Scattering
 SCATTERING
-3 7 3 1 0 1
-# e/i| c1   c2   c3 |  i |  N |  1  
-   0   -1    0    0    0    0    0    ## c1 == 0
-   0    0   -1    0    1    0    0    ## c2 == i
-   0    0    0   -1    0    0    0    ## c3 == 0
+1 4 1 0 0 1
+# e/i| c1 |  N |  1  
+   0   -1    0    0    ## c1 == 0
 
 # ----------------------------------------------  1.3 Access
 WRITE
-2 6 2 1 0 1
-# e/i| Arr  [1]|  i |  N |  1  
-   0   -1    0    0    0    3    ## Arr == a
-   0    0   -1    1    0    0    ## [1] == i
+1 4 1 0 0 1
+# e/i| Arr|  N |  1  
+   0   -1    0    1    ## Arr == a
 
 # ----------------------------------------------  1.4 Statement Extensions
 # Number of Statement Extensions
 1
 <body>
 # Number of original iterators
-1
-# List of original iterators
-i
+0
 # Statement body expression
-a[i] = 0;
+a = 0;
 </body>
 
 # =============================================== Statement 2
@@ -189,67 +620,11 @@ i
 b[i] = 0;
 </body>
 
-# =============================================== Extensions
-<scatnames>
-b0 i b1
-</scatnames>
-
-<arrays>
-# Number of arrays
-4
-# Mapping array-identifiers/array-names
-1 i
-2 N
-3 a
-4 b
-</arrays>
-
-<coordinates>
-# File name
-block.c
-# Starting line and column
-2 0
-# Ending line and column
-12 0
-# Indentation
-0
-</coordinates>
-
-<clay>
-block([0,0], [1,0]);
-</clay>
-
-</OpenScop>
-```
-
-After block transformation: 
-```
-# [File generated by the OpenScop Library 0.9.2]
-
-<OpenScop>
-
-# =============================================== Global
-# Language
-C
-
-# Context
-CONTEXT
-0 3 0 0 0 1
-
-# Parameters are provided
-1
-<strings>
-N
-</strings>
-
-# Number of statements
-1
-
-# =============================================== Statement 1
+# =============================================== Statement 3
 # Number of relations describing the statement:
-4
+3
 
-# ----------------------------------------------  1.1 Domain
+# ----------------------------------------------  3.1 Domain
 DOMAIN
 3 4 1 0 0 1
 # e/i|  i |  N |  1  
@@ -257,28 +632,22 @@ DOMAIN
    1   -1    1    0    ## -i+N >= 0
    1    0    1    0    ## N >= 0
 
-# ----------------------------------------------  1.2 Scattering
+# ----------------------------------------------  3.2 Scattering
 SCATTERING
 3 7 3 1 0 1
 # e/i| c1   c2   c3 |  i |  N |  1  
-   0   -1    0    0    0    0    0    ## c1 == 0
+   0   -1    0    0    0    0    1    ## c1 == 1
    0    0   -1    0    1    0    0    ## c2 == i
-   0    0    0   -1    0    0    0    ## c3 == 0
+   0    0    0   -1    0    0    1    ## c3 == 1
 
-# ----------------------------------------------  1.3 Access
+# ----------------------------------------------  3.3 Access
 WRITE
 2 6 2 1 0 1
 # e/i| Arr  [1]|  i |  N |  1  
-   0   -1    0    0    0    3    ## Arr == a
+   0   -1    0    0    0    5    ## Arr == c
    0    0   -1    1    0    0    ## [1] == i
 
-WRITE
-2 6 2 1 0 1
-# e/i| Arr  [1]|  i |  N |  1  
-   0   -1    0    0    0    4    ## Arr == b
-   0    0   -1    1    0    0    ## [1] == i
-
-# ----------------------------------------------  1.4 Statement Extensions
+# ----------------------------------------------  3.4 Statement Extensions
 # Number of Statement Extensions
 1
 <body>
@@ -287,7 +656,154 @@ WRITE
 # List of original iterators
 i
 # Statement body expression
-{a[i] = 0;b[i] = 0;}
+c[i] = 0;
+</body>
+
+# =============================================== Statement 4
+# Number of relations describing the statement:
+3
+
+# ----------------------------------------------  4.1 Domain
+DOMAIN
+3 4 1 0 0 1
+# e/i|  i |  N |  1  
+   1    1    0    0    ## i >= 0
+   1   -1    1    0    ## -i+N >= 0
+   1    0    1    0    ## N >= 0
+
+# ----------------------------------------------  4.2 Scattering
+SCATTERING
+3 7 3 1 0 1
+# e/i| c1   c2   c3 |  i |  N |  1  
+   0   -1    0    0    0    0    1    ## c1 == 1
+   0    0   -1    0    1    0    0    ## c2 == i
+   0    0    0   -1    0    0    2    ## c3 == 2
+
+# ----------------------------------------------  4.3 Access
+WRITE
+2 6 2 1 0 1
+# e/i| Arr  [1]|  i |  N |  1  
+   0   -1    0    0    0    6    ## Arr == d
+   0    0   -1    1    0    0    ## [1] == i
+
+# ----------------------------------------------  4.4 Statement Extensions
+# Number of Statement Extensions
+1
+<body>
+# Number of original iterators
+1
+# List of original iterators
+i
+# Statement body expression
+d[i] = 0;
+</body>
+
+# =============================================== Statement 5
+# Number of relations describing the statement:
+3
+
+# ----------------------------------------------  5.1 Domain
+DOMAIN
+3 4 1 0 0 1
+# e/i|  i |  N |  1  
+   1    1    0    0    ## i >= 0
+   1   -1    1    0    ## -i+N >= 0
+   1    0    1    0    ## N >= 0
+
+# ----------------------------------------------  5.2 Scattering
+SCATTERING
+3 7 3 1 0 1
+# e/i| c1   c2   c3 |  i |  N |  1  
+   0   -1    0    0    0    0    1    ## c1 == 1
+   0    0   -1    0    1    0    0    ## c2 == i
+   0    0    0   -1    0    0    3    ## c3 == 3
+
+# ----------------------------------------------  5.3 Access
+WRITE
+2 6 2 1 0 1
+# e/i| Arr  [1]|  i |  N |  1  
+   0   -1    0    0    0    7    ## Arr == t
+   0    0   -1    1    0    0    ## [1] == i
+
+# ----------------------------------------------  5.4 Statement Extensions
+# Number of Statement Extensions
+1
+<body>
+# Number of original iterators
+1
+# List of original iterators
+i
+# Statement body expression
+t[i] = 0;
+</body>
+
+# =============================================== Statement 6
+# Number of relations describing the statement:
+3
+
+# ----------------------------------------------  6.1 Domain
+DOMAIN
+3 4 1 0 0 1
+# e/i|  i |  N |  1  
+   1    1    0    0    ## i >= 0
+   1   -1    1    0    ## -i+N >= 0
+   1    0    1    0    ## N >= 0
+
+# ----------------------------------------------  6.2 Scattering
+SCATTERING
+3 7 3 1 0 1
+# e/i| c1   c2   c3 |  i |  N |  1  
+   0   -1    0    0    0    0    1    ## c1 == 1
+   0    0   -1    0    1    0    0    ## c2 == i
+   0    0    0   -1    0    0    4    ## c3 == 4
+
+# ----------------------------------------------  6.3 Access
+WRITE
+2 6 2 1 0 1
+# e/i| Arr  [1]|  i |  N |  1  
+   0   -1    0    0    0    8    ## Arr == s
+   0    0   -1    1    0    0    ## [1] == i
+
+# ----------------------------------------------  6.4 Statement Extensions
+# Number of Statement Extensions
+1
+<body>
+# Number of original iterators
+1
+# List of original iterators
+i
+# Statement body expression
+s[i] = 0;
+</body>
+
+# =============================================== Statement 7
+# Number of relations describing the statement:
+3
+
+# ----------------------------------------------  7.1 Domain
+DOMAIN
+0 3 0 0 0 1
+
+# ----------------------------------------------  7.2 Scattering
+SCATTERING
+1 4 1 0 0 1
+# e/i| c1 |  N |  1  
+   0   -1    0    2    ## c1 == 2
+
+# ----------------------------------------------  7.3 Access
+WRITE
+1 4 1 0 0 1
+# e/i| Arr|  N |  1  
+   0   -1    0    9    ## Arr == f
+
+# ----------------------------------------------  7.4 Statement Extensions
+# Number of Statement Extensions
+1
+<body>
+# Number of original iterators
+0
+# Statement body expression
+f = 0;
 </body>
 
 # =============================================== Extensions
@@ -297,21 +813,26 @@ b0 i b1
 
 <arrays>
 # Number of arrays
-4
+9
 # Mapping array-identifiers/array-names
-1 i
-2 N
-3 a
+1 a
+2 i
+3 N
 4 b
+5 c
+6 d
+7 t
+8 s
+9 f
 </arrays>
 
 <coordinates>
 # File name
-block.c
+./unitary/fuse.c
 # Starting line and column
 2 0
 # Ending line and column
-12 0
+16 0
 # Indentation
 0
 </coordinates>
@@ -335,12 +856,12 @@ if (N >= 0) {
 
 ## Code Example
 
-See `example/poc.c`. 
+See `example/poc.cpp`. 
 
 It is an example of a source (to polyhedra) to source compiler. 
 
 ```bash
-gcc -DCLOOG_INT_GMP poc.c -lcloog-isl -lclan -losl -o poc
+g++ -DCLOOG_INT_GMP poc.cpp -lcloog-isl -lclan -losl -o poc
 ./poc scop.c
 ```
 
