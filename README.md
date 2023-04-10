@@ -22,7 +22,7 @@ Reference: clay https://github.com/periscop/clay
  * depth
  * return status
  */
-int split (osl_scop_p scop, std::vector<int> statementID, unsigned int depth);
+int split(osl_scop_p scop, std::vector<int> statementID, unsigned int depth);
 
 /**
  * reorder function:
@@ -48,7 +48,7 @@ int reorder(osl_scop_p scop, std::vector<int> statementID, std::vector<int> newo
 int interchange(osl_scop_p scop,
                 std::vector<int> statementID,
                 unsigned int depth_1, unsigned int depth_2,
-                int pretty)
+                int pretty) ;
 
 /**
  * fuse function:
@@ -57,7 +57,7 @@ int interchange(osl_scop_p scop,
  * statementID: the statement scattering ID on AST
  * return status
  */
-int fuse(osl_scop_p scop, std::vector<int> statementID)
+int fuse(osl_scop_p scop, std::vector<int> statementID) ;
 
 /**
  * skew function
@@ -77,7 +77,7 @@ int skew(osl_scop_p scop,
          std::vector<int> statementID,
          unsigned int depth,
          unsigned int depth_other,
-         int coeff)
+         int coeff) ;
 
 /**
  * tile function:
@@ -91,7 +91,7 @@ int skew(osl_scop_p scop,
 */
 int tile(osl_scop_p scop,
          std::vector<int> statementID, unsigned int depth, unsigned int depth_outer,
-         unsigned int size)
+         unsigned int size) ;
 
 // BONUS
 /** unroll function
@@ -101,10 +101,10 @@ int tile(osl_scop_p scop,
  * factor: unroll factor
  * return status
  */
-int unroll(osl_scop_p scop, std::vector<int> statementID, unsigned int factor)
+int unroll(osl_scop_p scop, std::vector<int> statementID, unsigned int factor) ;
 ```
 
-### Example 
+### Example
 
 ```C
 #pragma scop

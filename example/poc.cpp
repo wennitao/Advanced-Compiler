@@ -8,7 +8,7 @@
 #include <clan/clan.h>
 #include <cloog/cloog.h>
 
-// int split (osl_scop_p scop, std::vector<int> statementID, unsigned int depth);
+// int split(osl_scop_p scop, std::vector<int> statementID, unsigned int depth);
 // int reorder(osl_scop_p scop, std::vector<int> statementID, std::vector<int> neworder) ;
 // int interchange(osl_scop_p scop,
 //                 std::vector<int> statementID,
