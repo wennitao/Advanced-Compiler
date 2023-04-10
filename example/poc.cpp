@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
     }
     scop = read_scop_from_c(input, argv[1]);
     osl_scop_print(stdout, scop);
-    // UPDATE THE SCOP IN A SMART WAY HERE
+    // Do the loop transformations on loop here
     print_scop_to_c(stdout, scop);
     osl_scop_free(scop);
     fclose(input);
