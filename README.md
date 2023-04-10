@@ -1,15 +1,18 @@
 # Advanced Compiler
+
 Advanced Compiler Assignment of ACM Class
 
-## Loop Transformation on Polyhedral 
+## Loop Transformation on Polyhedral
 
 Idea from "A Practical Automatic Polyhedral Parallelizer and Locality Optimizer".
 
-C code -> Polyhedral extraction (clan) -> Dependence analysis (candl) -> **Loop Transformation** -> Code generation (CLooG) -> C code
+C code → Polyhedral extraction (clan) → Dependence analysis (candl) → **Loop Transformation** → Code generation (CLooG) → C code
 
-Polyhedral format: SCoP (Static Control Part) https://github.com/periscop/openscop
+Polyhedral format: SCoP (Static Control Part)
+https://github.com/periscop/openscop
 
-Reference: clay https://github.com/periscop/clay
+Reference: clay 
+https://github.com/periscop/clay
 
 ## Implementation
 
@@ -125,12 +128,13 @@ f = 0;
 #pragma endscop
 ```
 
-Use clan to extract polyhedral format from C code. 
+Use clan to extract polyhedral format from C code.
 See `example/fuse.c.orig.scop`.
 
 After loop fusion, see `example/fuse.c.clay.scop`.
 
-Use CLooG to generate C code: 
+Use CLooG to generate C code:
+
 ```C
 a = 0;
 for (i=0;i<=N;i++) {
@@ -159,6 +163,7 @@ g++ -DCLOOG_INT_GMP poc.cpp -lcloog-isl -lclan -losl -o poc
 **Requirements**: `autoconf`, `automake`, `libtool`, `GMP`, `bison >= 2.4`
 
 If you are a Mac user, you may need to run to set default library and include path.
+
 ```bash
 /bin/launchctl setenv LIBRARY_PATH /usr/local/lib
 /bin/launchctl setenv CPATH /usr/local/include
@@ -166,7 +171,7 @@ If you are a Mac user, you may need to run to set default library and include pa
 
 (I don't know what makes me to successfully compile it on my Mac.)
 
-### Clan 
+### Clan
 
 Chunky Loop Analyzer: A Polyhedral Representation Extraction Tool for High Level Programs
 
