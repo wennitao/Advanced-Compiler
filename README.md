@@ -182,6 +182,7 @@ https://github.com/periscop/clan
 ```bash
 git clone https://github.com/periscop/clan.git
 cd clan
+./get_submodules.sh
 ./autogen.sh
 ./configure
 make
